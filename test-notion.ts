@@ -1,0 +1,49 @@
+#!/usr/bin/env bun
+
+import { EmailLink } from './src/domain/entities/EmailLink.js';
+import { NotionDatabaseWriter } from './src/infrastructure/adapters/NotionDatabaseWriter.js';
+import { EnvConfig } from './src/infrastructure/config/EnvConfig.js';
+
+async function testNotion() {
+    try {
+        // Load configuration
+        const config = new EnvConfig();
+        await config.load();
+        const notionToken = config.get('NOTION_INTEGRATION_TOKEN');
+        const notionDatabaseId = config.get('NOTION_DATABASE_ID');
+
+        // Create test links from the test CSV
+        const testLinks = [
+            new EmailLink(
+                'https://x.com/heynina101/status/1985284315282907143?s=51&t=JsTxSwMxTXa9',
+                'Social Media Post',
+                'This appears to be a Twitter (X) post by a user with the handle @heynina101, shared on the social media platform.',
+                'test'
+            ),
+            new EmailLink(
+                'https://www.kompozite.io/blog/le-co2-equivalent-comprendre-limportance-de-lunite-de-mesure-des-ges',
+                'Climate Impact Metrics',
+                'This French-language article discusses the CO2 equivalent (CO2e) as a critical measurement unit for greenhouse gas emissions.',
+                'test'
+            ),
+            new EmailLink(
+                'http://albertapp.com/',
+                'AI Business Assistant',
+                'Albert is an artificial intelligence platform designed to help digital marketing and advertising professionals optimize their campaigns.',
+                'test'
+            ),
+        ];
+
+        console.log('🧪 Testing Notion integration with 3 test links...\n');
+
+        const notionWriter = new NotionDatabaseWriter(notionToken);
+        await notionWriter.write(testLinks, notionDatabaseId);
+
+        console.log('\n✅ Test completed successfully!');
+    } catch (error) {
+        console.error('\n❌ Test failed:', error instanceof Error ? error.message : error);
+        process.exit(1);
+    }
+}
+
+testNotion();
