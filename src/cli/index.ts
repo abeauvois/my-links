@@ -6,6 +6,7 @@ import { MimeEmailParser } from '../infrastructure/adapters/MimeEmailParser.js';
 import { AnthropicAnalyzer } from '../infrastructure/adapters/AnthropicAnalyzer.js';
 import { CsvFileWriter } from '../infrastructure/adapters/CsvFileWriter.js';
 import { NotionDatabaseWriter } from '../infrastructure/adapters/NotionDatabaseWriter.js';
+import { TwitterScraper } from '../infrastructure/adapters/TwitterScraper.js';
 import { EnvConfig } from '../infrastructure/config/EnvConfig.js';
 
 /**
@@ -31,6 +32,7 @@ Environment Variables:
   ANTHROPIC_API_KEY         Your Anthropic API key (required, from .env file)
   NOTION_INTEGRATION_TOKEN  Your Notion integration token (required, from .env file)
   NOTION_DATABASE_ID        Your Notion database ID (required, from .env file)
+  TWITTER_BEARER_TOKEN      Your Twitter API v2 bearer token (required for tweet content extraction)
 
 Examples:
   bun run src/cli/index.ts mylinks.zip
@@ -59,6 +61,7 @@ Architecture:
     const anthropicApiKey = config.get('ANTHROPIC_API_KEY');
     const notionToken = config.get('NOTION_INTEGRATION_TOKEN');
     const notionDatabaseId = config.get('NOTION_DATABASE_ID');
+    const twitterBearerToken = config.get('TWITTER_BEARER_TOKEN');
     console.log('✅ Configuration loaded\n');
 
     // Initialize adapters (infrastructure layer)
@@ -67,6 +70,7 @@ Architecture:
     const linkAnalyzer = new AnthropicAnalyzer(anthropicApiKey);
     const csvWriter = new CsvFileWriter();
     const notionWriter = new NotionDatabaseWriter(notionToken);
+    const tweetScraper = new TwitterScraper(twitterBearerToken);
 
     // Initialize use case (application layer)
     const useCase = new ExtractLinksUseCase(
@@ -74,7 +78,8 @@ Architecture:
       emailParser,
       linkAnalyzer,
       csvWriter,
-      notionWriter
+      notionWriter,
+      tweetScraper
     );
 
     // Execute the workflow

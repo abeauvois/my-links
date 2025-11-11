@@ -4,6 +4,7 @@ import { IEmailParser } from '../domain/ports/IEmailParser.js';
 import { ILinkAnalyzer } from '../domain/ports/ILinkAnalyzer.js';
 import { ICsvWriter } from '../domain/ports/ICsvWriter.js';
 import { INotionWriter } from '../domain/ports/INotionWriter.js';
+import { ITweetScraper } from '../domain/ports/ITweetScraper.js';
 
 /**
  * Application Use Case: Orchestrates the email link extraction process
@@ -14,7 +15,8 @@ export class ExtractLinksUseCase {
         private readonly emailParser: IEmailParser,
         private readonly linkAnalyzer: ILinkAnalyzer,
         private readonly csvWriter: ICsvWriter,
-        private readonly notionWriter: INotionWriter
+        private readonly notionWriter: INotionWriter,
+        private readonly tweetScraper: ITweetScraper
     ) { }
 
     /**
@@ -54,7 +56,18 @@ export class ExtractLinksUseCase {
             console.log(`  [${i + 1}/${emailLinks.length}] Analyzing: ${link.url}`);
 
             try {
-                const analysis = await this.linkAnalyzer.analyze(link.url);
+                // Try to fetch tweet content if it's a Twitter/X URL
+                let tweetContent: string | null = null;
+                if (link.url.includes('twitter.com/') || link.url.includes('x.com/')) {
+                    console.log(`    🐦 Fetching tweet content...`);
+                    tweetContent = await this.tweetScraper.fetchTweetContent(link.url);
+                    if (tweetContent) {
+                        console.log(`    ✓ Tweet content retrieved`);
+                    }
+                }
+
+                // Analyze link with optional tweet content
+                const analysis = await this.linkAnalyzer.analyze(link.url, tweetContent || undefined);
                 const categorized = link.withCategorization(analysis.tag, analysis.description);
                 categorizedLinks.push(categorized);
                 console.log(`    ✓ Tag: ${analysis.tag}`);
