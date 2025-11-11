@@ -12,7 +12,16 @@ export class AnthropicAnalyzer implements ILinkAnalyzer {
         this.client = new Anthropic({ apiKey });
     }
 
+    private isTwitterUrl(url: string): boolean {
+        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/');
+    }
+
     async analyze(url: string, additionalContext?: string): Promise<LinkAnalysis> {
+
+        if (!additionalContext && this.isTwitterUrl(url)) {
+            return { tag: 'Unknown', description: 'No additional context provided.' };
+        }
+
         let prompt = `Analyze this URL and provide:
 1. A short categorization tag (2-4 words max, e.g., "AI/Machine Learning", "Climate Change", "Web Development", etc.)
 2. A description of what this link is about (200 words maximum)

@@ -1,0 +1,13 @@
+-
+- [ ] avoid unecessary unzips if already done
+- [ ] avoid unecessary ai analysis (content not accessible)
+- [ ] add an "imported_date" field
+- [ ] add an "sha1" field as a checksum / identity
+- [ ] only import new links (with deduplication mechanism, html sha?)
+- [ ] notion bulk csv import
+- [ ] make this an autonomous service
+
+  - [ ] add Dockerfile and docker-compose.yml files
+
+- [ ] reuse code from https://github.com/rasreee/csv-to-notion-database
+- [ ] add integration tests

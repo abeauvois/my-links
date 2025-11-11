@@ -10,12 +10,40 @@ export class TwitterScraper implements ITweetScraper {
 
     constructor(private readonly bearerToken: string) { }
 
+    /**
+     * Get the rate limit reset time in milliseconds
+     */
+    getRateLimitResetTime(): number {
+        return this.rateLimitResetTime;
+    }
+
+    /**
+     * Check if currently rate limited
+     */
+    isRateLimited(): boolean {
+        return this.rateLimitResetTime > Date.now();
+    }
+
     async fetchTweetContent(url: string): Promise<string | null> {
         try {
+            // If it's a t.co link, resolve it first
+            let resolvedUrl = url;
+            if (url.includes('t.co/')) {
+                console.log(`  🔗 Resolving t.co shortened URL...`);
+                const resolved = await this.resolveShortUrl(url);
+                if (resolved) {
+                    resolvedUrl = resolved;
+                    console.log(`  ✓ Resolved to: ${resolvedUrl}`);
+                } else {
+                    console.log(`  ⚠️  Could not resolve t.co URL`);
+                    return null;
+                }
+            }
+
             // Extract tweet ID from URL
-            const tweetId = this.extractTweetId(url);
+            const tweetId = this.extractTweetId(resolvedUrl);
             if (!tweetId) {
-                console.log(`  ⚠️  Could not extract tweet ID from URL: ${url}`);
+                console.log(`  ⚠️  Could not extract tweet ID from URL: ${resolvedUrl}`);
                 return null;
             }
 
@@ -141,9 +169,35 @@ export class TwitterScraper implements ITweetScraper {
     }
 
     /**
-     * Checks if a URL is a Twitter/X URL
+     * Resolves a shortened t.co URL to its final destination
+     */
+    private async resolveShortUrl(shortUrl: string): Promise<string | null> {
+        try {
+            // Use HEAD request to follow redirects without downloading content
+            const response = await fetch(shortUrl, {
+                method: 'HEAD',
+                redirect: 'follow',
+            });
+
+            // The final URL after redirects
+            const finalUrl = response.url;
+
+            // Check if it's a Twitter/X URL
+            if (finalUrl.includes('twitter.com/') || finalUrl.includes('x.com/')) {
+                return finalUrl;
+            }
+
+            return null;
+        } catch (error) {
+            console.log(`  ⚠️  Error resolving URL: ${error instanceof Error ? error.message : error}`);
+            return null;
+        }
+    }
+
+    /**
+     * Checks if a URL is a Twitter/X URL or t.co link
      */
     static isTweetUrl(url: string): boolean {
-        return url.includes('twitter.com/') || url.includes('x.com/');
+        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/');
     }
 }
