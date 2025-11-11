@@ -1,8 +1,8 @@
 #!/usr/bin/env bun
 
-import { EmailLink } from './src/domain/entities/EmailLink.js';
-import { NotionDatabaseWriter } from './src/infrastructure/adapters/NotionDatabaseWriter.js';
-import { EnvConfig } from './src/infrastructure/config/EnvConfig.js';
+import { EmailLink } from '../../../../domain/entities/EmailLink.js';
+import { NotionDatabaseWriter } from '../../../adapters/NotionDatabaseWriter.js';
+import { EnvConfig } from '../../../config/EnvConfig.js';
 
 async function testNotion() {
     try {
