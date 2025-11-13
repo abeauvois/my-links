@@ -1,6 +1,6 @@
 import { ITweetScraper } from '../../domain/ports/ITweetScraper.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
-import { CachedHttpClient } from './CachedHttpClient.js';
+import { CachedHttpClient } from '@myorg/cached-http-client';
 
 /**
  * Adapter: Implements tweet scraping using Twitter API v2 with Bearer Token

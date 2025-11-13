@@ -5,6 +5,7 @@ import { ILinkAnalyzer } from '../domain/ports/ILinkAnalyzer.js';
 import { ICsvWriter } from '../domain/ports/ICsvWriter.js';
 import { INotionWriter } from '../domain/ports/INotionWriter.js';
 import { ITweetScraper } from '../domain/ports/ITweetScraper.js';
+import { ILogger } from '../domain/ports/ILogger.js';
 
 interface QueuedLink {
     link: EmailLink;
@@ -25,7 +26,8 @@ export class ExtractLinksUseCase {
         private readonly linkAnalyzer: ILinkAnalyzer,
         private readonly csvWriter: ICsvWriter,
         private readonly notionWriter: INotionWriter,
-        private readonly tweetScraper: ITweetScraper
+        private readonly tweetScraper: ITweetScraper,
+        private readonly logger: ILogger
     ) { }
 
     static isTwitterUrl(url: string): boolean {
@@ -50,16 +52,16 @@ export class ExtractLinksUseCase {
             await this.exportResults(categorizedLinks, outputCsvPath, notionDatabaseId);
         }
 
-        console.log('\n✅ All done!');
+        this.logger.info('\n✅ All done!');
     }
 
     /**
      * Extract email files from zip/directory
      */
     private async extractEmailFiles(zipFilePath: string): Promise<Map<string, string>> {
-        console.log('📦 Extracting .eml files from zip...');
+        this.logger.info('📦 Extracting .eml files from zip...');
         const emailFiles = await this.zipExtractor.extractEmlFiles(zipFilePath);
-        console.log(`✅ Found ${emailFiles.size} email files`);
+        this.logger.info(`✅ Found ${emailFiles.size} email files`);
         return emailFiles;
     }
 
@@ -67,7 +69,7 @@ export class ExtractLinksUseCase {
      * Parse email files and extract links
      */
     private async parseEmailLinks(emailFiles: Map<string, string>): Promise<EmailLink[]> {
-        console.log('\n🔍 Parsing emails and extracting links...');
+        this.logger.info('\n🔍 Parsing emails and extracting links...');
         const emailLinks: EmailLink[] = [];
 
         for (const [filename, content] of emailFiles.entries()) {
@@ -76,13 +78,13 @@ export class ExtractLinksUseCase {
             if (links.length > 0) {
                 const mainLink = links[0];
                 emailLinks.push(new EmailLink(mainLink, '', '', filename));
-                console.log(`  📧 ${filename}: ${mainLink}`);
+                this.logger.info(`  📧 ${filename}: ${mainLink}`);
             } else {
-                console.log(`  ⚠️  ${filename}: No links found`);
+                this.logger.warning(`  ⚠️  ${filename}: No links found`);
             }
         }
 
-        console.log(`\n✅ Extracted ${emailLinks.length} links`);
+        this.logger.info(`\n✅ Extracted ${emailLinks.length} links`);
         return emailLinks;
     }
 
@@ -93,24 +95,24 @@ export class ExtractLinksUseCase {
         categorizedLinks: EmailLink[];
         retryQueue: QueuedLink[];
     }> {
-        console.log('\n🤖 Analyzing links with AI...');
+        this.logger.info('\n🤖 Analyzing links with AI...');
         const categorizedLinks: EmailLink[] = [];
         const retryQueue: QueuedLink[] = [];
 
         for (let i = 0; i < emailLinks.length; i++) {
             const link = emailLinks[i];
-            console.log(`  [${i + 1}/${emailLinks.length}] Analyzing: ${link.url}`);
+            this.logger.info(`  [${i + 1}/${emailLinks.length}] Analyzing: ${link.url}`);
 
             try {
                 const { categorized, shouldRetry } = await this.analyzeLink(link);
                 categorizedLinks.push(categorized);
-                console.log(`    ✓ Tag: ${categorized.tag}`);
+                this.logger.info(`    ✓ Tag: ${categorized.tag}`);
 
                 if (shouldRetry) {
                     retryQueue.push({ link, index: categorizedLinks.length - 1 });
                 }
             } catch (error) {
-                console.error(`    ✗ Error analyzing link: ${error}`);
+                this.logger.error(`    ✗ Error analyzing link: ${error}`);
                 categorizedLinks.push(link);
             }
         }
@@ -129,10 +131,10 @@ export class ExtractLinksUseCase {
         let tweetContent: string | null = null;
 
         if (isTwitterUrl) {
-            console.log(`    🐦 Fetching tweet content...`);
+            this.logger.info(`    🐦 Fetching tweet content...`);
             tweetContent = await this.tweetScraper.fetchTweetContent(link.url);
             if (tweetContent) {
-                console.log(`    ✓ Tweet content retrieved`);
+                this.logger.info(`    ✓ Tweet content retrieved`);
             }
         }
 
@@ -143,7 +145,7 @@ export class ExtractLinksUseCase {
         const shouldRetry = isTwitterUrl &&
             analysis.tag === 'Unknown' &&
             !tweetContent &&
-            (this.tweetScraper as any).isRateLimited();
+            this.tweetScraper.isRateLimited();
 
         return { categorized, shouldRetry };
     }
@@ -157,22 +159,22 @@ export class ExtractLinksUseCase {
         notionDatabaseId: string,
         updatedUrls?: Set<string>
     ): Promise<void> {
-        console.log('\n💾 Writing results to CSV...');
+        this.logger.info('\n💾 Writing results to CSV...');
         await this.csvWriter.write(categorizedLinks, outputCsvPath);
-        console.log(`✅ CSV export complete! Output saved to: ${outputCsvPath}`);
+        this.logger.info(`✅ CSV export complete! Output saved to: ${outputCsvPath}`);
 
-        console.log('\n📝 Exporting to Notion...');
+        this.logger.info('\n📝 Exporting to Notion...');
         try {
             await this.notionWriter.write(categorizedLinks, notionDatabaseId);
-            console.log(`✅ Notion export complete!`);
+            this.logger.info(`✅ Notion export complete!`);
 
             // Update enriched entries if provided
             if (updatedUrls && updatedUrls.size > 0) {
-                await (this.notionWriter as any).updatePages(categorizedLinks, notionDatabaseId, updatedUrls);
+                await this.notionWriter.updatePages(categorizedLinks, notionDatabaseId, updatedUrls);
             }
         } catch (error) {
-            console.error(`❌ Notion export failed: ${error instanceof Error ? error.message : error}`);
-            console.log('Note: CSV export was successful. Only Notion export failed.');
+            this.logger.error(`❌ Notion export failed: ${error instanceof Error ? error.message : error}`);
+            this.logger.info('Note: CSV export was successful. Only Notion export failed.');
         }
     }
 
@@ -187,10 +189,10 @@ export class ExtractLinksUseCase {
     ): Promise<void> {
         const waitSeconds = this.getRateLimitWaitTime();
 
-        console.log(`\n⏳ ${retryQueue.length} Twitter links rate-limited. Reset in ${waitSeconds} seconds`);
+        this.logger.info(`\n⏳ ${retryQueue.length} Twitter links rate-limited. Reset in ${waitSeconds} seconds`);
 
         if (waitSeconds > ExtractLinksUseCase.MAX_WAIT_SECONDS) {
-            console.log(`⚠️  Wait time exceeds 15 minutes. Skipping retry - links kept as "Unknown"`);
+            this.logger.warning(`⚠️  Wait time exceeds 15 minutes. Skipping retry - links kept as "Unknown"`);
             await this.exportResults(categorizedLinks, outputCsvPath, notionDatabaseId);
             return;
         }
@@ -198,9 +200,9 @@ export class ExtractLinksUseCase {
         await this.waitForRateLimitReset();
         const updatedUrls = await this.retryQueuedLinks(retryQueue, categorizedLinks);
 
-        console.log('\n💾 Updating CSV with enriched results...');
+        this.logger.info('\n💾 Updating CSV with enriched results...');
         await this.csvWriter.write(categorizedLinks, outputCsvPath);
-        console.log(`✅ CSV updated! Output saved to: ${outputCsvPath}`);
+        this.logger.info(`✅ CSV updated! Output saved to: ${outputCsvPath}`);
 
         await this.exportResults(categorizedLinks, outputCsvPath, notionDatabaseId, updatedUrls);
     }
@@ -209,7 +211,7 @@ export class ExtractLinksUseCase {
      * Get seconds until rate limit reset
      */
     private getRateLimitWaitTime(): number {
-        const resetTime = (this.tweetScraper as any).getRateLimitResetTime();
+        const resetTime = this.tweetScraper.getRateLimitResetTime();
         return Math.ceil((resetTime - Date.now()) / 1000);
     }
 
@@ -217,24 +219,22 @@ export class ExtractLinksUseCase {
      * Wait for rate limit reset with countdown
      */
     private async waitForRateLimitReset(): Promise<void> {
-        console.log(`⏳ Waiting for rate limit reset...`);
-        const resetTime = (this.tweetScraper as any).getRateLimitResetTime();
+        this.logger.info(`⏳ Waiting for rate limit reset...`);
+        const resetTime = this.tweetScraper.getRateLimitResetTime();
         const endWait = resetTime + ExtractLinksUseCase.RATE_LIMIT_BUFFER_MS;
 
         while (Date.now() < endWait) {
             const remaining = Math.ceil((endWait - Date.now()) / 1000);
             if (remaining > 0 && remaining % ExtractLinksUseCase.COUNTDOWN_INTERVAL === 0) {
-                console.log(`⏳ ${remaining}s remaining...`);
+                this.logger.info(`⏳ ${remaining}s remaining...`);
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
         // Clear the rate limit now that we've waited
-        if ('clearRateLimit' in this.tweetScraper) {
-            (this.tweetScraper as any).clearRateLimit();
-        }
+        this.tweetScraper.clearRateLimit();
 
-        console.log(`✅ Rate limit reset! Retrying...\n`);
+        this.logger.info(`✅ Rate limit reset! Retrying...\n`);
     }
 
     /**
@@ -244,13 +244,13 @@ export class ExtractLinksUseCase {
         retryQueue: QueuedLink[],
         categorizedLinks: EmailLink[]
     ): Promise<Set<string>> {
-        console.log(`🔄 Retrying ${retryQueue.length} rate-limited links...`);
+        this.logger.info(`🔄 Retrying ${retryQueue.length} rate-limited links...`);
         const updatedUrls = new Set<string>();
         let successCount = 0;
 
         for (let i = 0; i < retryQueue.length; i++) {
             const { link, index } = retryQueue[i];
-            console.log(`  [${i + 1}/${retryQueue.length}] Retrying: ${link.url}`);
+            this.logger.info(`  [${i + 1}/${retryQueue.length}] Retrying: ${link.url}`);
 
             try {
                 const enriched = await this.retryLink(link);
@@ -259,16 +259,16 @@ export class ExtractLinksUseCase {
                     categorizedLinks[index] = enriched;
                     updatedUrls.add(link.url);
                     successCount++;
-                    console.log(`    ✓ Enriched with tag: ${enriched.tag}`);
+                    this.logger.info(`    ✓ Enriched with tag: ${enriched.tag}`);
                 } else {
-                    console.log(`    ⚠️  Still unable to fetch tweet content`);
+                    this.logger.warning(`    ⚠️  Still unable to fetch tweet content`);
                 }
             } catch (error) {
-                console.error(`    ✗ Retry failed: ${error}`);
+                this.logger.error(`    ✗ Retry failed: ${error}`);
             }
         }
 
-        console.log(`\n✅ Retry complete: ${successCount}/${retryQueue.length} links enriched`);
+        this.logger.info(`\n✅ Retry complete: ${successCount}/${retryQueue.length} links enriched`);
         return updatedUrls;
     }
 
@@ -282,7 +282,7 @@ export class ExtractLinksUseCase {
             return null;
         }
 
-        console.log(`    ✓ Tweet content retrieved`);
+        this.logger.info(`    ✓ Tweet content retrieved`);
         const analysis = await this.linkAnalyzer.analyze(link.url, tweetContent);
         return link.withCategorization(analysis.tag, analysis.description);
     }

@@ -83,7 +83,8 @@ Architecture:
       linkAnalyzer,
       csvWriter,
       notionWriter,
-      tweetScraper
+      tweetScraper,
+      logger
     );
 
     // Execute the workflow

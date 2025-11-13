@@ -10,4 +10,12 @@ export interface INotionWriter {
      * @param databaseId Notion database ID to write to
      */
     write(links: EmailLink[], databaseId: string): Promise<void>;
+
+    /**
+     * Update existing Notion pages for specific URLs
+     * @param links All links (with updated data)
+     * @param databaseId Notion database ID
+     * @param urlsToUpdate Set of URLs that should be updated
+     */
+    updatePages(links: EmailLink[], databaseId: string, urlsToUpdate: Set<string>): Promise<void>;
 }
