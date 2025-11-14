@@ -1,0 +1,106 @@
+import { EmailLink } from '../../domain/entities/EmailLink';
+import { ILinkAnalyzer } from '../../domain/ports/ILinkAnalyzer';
+import { ILogger } from '../../domain/ports/ILogger';
+import { ITweetScraper } from '../../domain/ports/ITweetScraper';
+import { QueuedLink } from '../ExtractLinksUseCase';
+import { ExtractLinksConfig } from '../config/ExtractLinksConfig';
+
+/**
+ * Result of analyzing a collection of links
+ */
+export interface AnalysisResult {
+    categorizedLinks: EmailLink[];
+    retryQueue: QueuedLink[];
+}
+
+/**
+ * Service responsible for analyzing links with AI and handling Twitter content enrichment
+ */
+export class LinkAnalysisService {
+    constructor(
+        private readonly linkAnalyzer: ILinkAnalyzer,
+        private readonly tweetScraper: ITweetScraper,
+        private readonly logger: ILogger
+    ) { }
+
+    /**
+     * Analyze a collection of email links with AI
+     * @param links Array of EmailLink objects to analyze
+     * @returns Categorized links and retry queue for rate-limited links
+     */
+    async analyzeLinks(links: EmailLink[]): Promise<AnalysisResult> {
+        this.logger.info('\n🤖 Analyzing links with AI...');
+        const categorizedLinks: EmailLink[] = [];
+        const retryQueue: QueuedLink[] = [];
+
+        for (let i = 0; i < links.length; i++) {
+            const link = links[i];
+            const truncatedUrl = this.truncateUrl(link.url);
+            this.logger.info(`  [${i + 1}/${links.length}] Analyzing: ${truncatedUrl}`);
+
+            try {
+                const result = await this.analyzeSingleLink(link);
+                categorizedLinks.push(result.categorized);
+                this.logger.info(`    ✓ Tag: ${result.categorized.tag}`);
+
+                if (result.shouldRetry) {
+                    retryQueue.push({
+                        link,
+                        index: categorizedLinks.length - 1,
+                        attempts: 0
+                    });
+                }
+            } catch (error) {
+                this.logger.error(`    ✗ Error analyzing link: ${error}`);
+                categorizedLinks.push(link);
+            }
+        }
+
+        return { categorizedLinks, retryQueue };
+    }
+
+    /**
+     * Analyze a single link with optional Twitter content enrichment
+     */
+    private async analyzeSingleLink(link: EmailLink): Promise<{
+        categorized: EmailLink;
+        shouldRetry: boolean;
+    }> {
+        const isTwitterUrl = this.isTwitterUrl(link.url);
+        let tweetContent: string | null = null;
+
+        if (isTwitterUrl) {
+            this.logger.info(`    🐦 Fetching tweet content...`);
+            tweetContent = await this.tweetScraper.fetchTweetContent(link.url);
+            if (tweetContent) {
+                this.logger.info(`    ✓ Tweet content retrieved`);
+            }
+        }
+
+        const analysis = await this.linkAnalyzer.analyze(link.url, tweetContent || undefined);
+        const categorized = link.withCategorization(analysis.tag, analysis.description);
+
+        // Check if this should be queued for retry
+        const shouldRetry = isTwitterUrl &&
+            analysis.tag === 'Unknown' &&
+            !tweetContent &&
+            this.tweetScraper.isRateLimited();
+
+        return { categorized, shouldRetry };
+    }
+
+    /**
+     * Check if URL is a Twitter/X URL
+     */
+    private isTwitterUrl(url: string): boolean {
+        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/');
+    }
+
+    /**
+     * Truncate URL for logging purposes
+     */
+    private truncateUrl(url: string): string {
+        const maxLength = ExtractLinksConfig.LINK.MAX_LOG_LENGTH;
+        return url.length > maxLength ? url.slice(0, maxLength - 3) + '...' : url;
+    }
+}
