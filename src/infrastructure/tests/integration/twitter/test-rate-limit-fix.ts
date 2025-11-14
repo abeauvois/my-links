@@ -1,15 +1,15 @@
 #!/usr/bin/env bun
 
 // Test script to verify the rate limit fix
-import { EnvConfig } from './src/infrastructure/config/EnvConfig.js';
+import { EnvConfig } from '../../../config/EnvConfig.js';
 
 // Load environment variables
 const config = new EnvConfig();
 await config.load();
 
 // Import after env vars are loaded
-import { TwitterScraper } from './src/infrastructure/adapters/TwitterScraper.js';
-import { CliuiLogger } from './src/infrastructure/adapters/CliuiLogger.js';
+import { TwitterScraper } from '../../../adapters/TwitterScraper.js';
+import { CliuiLogger } from '../../../adapters/CliuiLogger.js';
 
 async function testRateLimitFix() {
     const logger = new CliuiLogger();

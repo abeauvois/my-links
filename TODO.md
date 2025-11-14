@@ -1,8 +1,11 @@
 -
 - [ ] avoid unecessary unzips if already done
 - [ ] avoid unecessary ai analysis (content not accessible)
+- [ ] ui: use cliui select list to preselect linkstasks
+- [ ] ui: use cliui tasks for animations
+
 - [ ] add an "imported_date" field
-- [ ] add an "sha1" field as a checksum / identity
+- [ ] add an "sha1" field as a checksum / identity?
 - [ ] only import new links (with deduplication mechanism, html sha?)
 - [ ] notion bulk csv import
 - [ ] make this an autonomous service

@@ -1,24 +1,26 @@
-import { EmailLink } from '../domain/entities/EmailLink.js';
-import { IZipExtractor } from '../domain/ports/IZipExtractor.js';
-import { IEmailParser } from '../domain/ports/IEmailParser.js';
-import { ILinkAnalyzer } from '../domain/ports/ILinkAnalyzer.js';
-import { ICsvWriter } from '../domain/ports/ICsvWriter.js';
-import { INotionWriter } from '../domain/ports/INotionWriter.js';
-import { ITweetScraper } from '../domain/ports/ITweetScraper.js';
-import { ILogger } from '../domain/ports/ILogger.js';
+import { EmailLink } from '../domain/entities/EmailLink';
+import { ICsvWriter } from '../domain/ports/ICsvWriter';
+import { IEmailParser } from '../domain/ports/IEmailParser';
+import { ILinkAnalyzer } from '../domain/ports/ILinkAnalyzer';
+import { ILogger } from '../domain/ports/ILogger';
+import { INotionWriter } from '../domain/ports/INotionWriter';
+import { ITweetScraper } from '../domain/ports/ITweetScraper';
+import { IZipExtractor } from '../domain/ports/IZipExtractor';
 
-interface QueuedLink {
+export interface QueuedLink {
     link: EmailLink;
     index: number;
 }
 
 /**
  * Application Use Case: Orchestrates the email link extraction process
- */
+*/
+
 export class ExtractLinksUseCase {
     private static readonly MAX_WAIT_SECONDS = 15 * 60; // 15 minutes
     private static readonly RATE_LIMIT_BUFFER_MS = 5000; // 5 second buffer
     private static readonly COUNTDOWN_INTERVAL = 10; // Show countdown every 10 seconds
+    private readonly LINK_MAX_LENGTH = 80;
 
     constructor(
         private readonly zipExtractor: IZipExtractor,
@@ -31,7 +33,7 @@ export class ExtractLinksUseCase {
     ) { }
 
     static isTwitterUrl(url: string): boolean {
-        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/')
+        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/');
     }
 
     /**
@@ -101,7 +103,8 @@ export class ExtractLinksUseCase {
 
         for (let i = 0; i < emailLinks.length; i++) {
             const link = emailLinks[i];
-            this.logger.info(`  [${i + 1}/${emailLinks.length}] Analyzing: ${link.url}`);
+            const truncatedUrl = truncate(link.url, this.LINK_MAX_LENGTH);
+            this.logger.info(`  [${i + 1}/${emailLinks.length}] Analyzing: ${truncatedUrl}`);
 
             try {
                 const { categorized, shouldRetry } = await this.analyzeLink(link);
@@ -118,6 +121,10 @@ export class ExtractLinksUseCase {
         }
 
         return { categorizedLinks, retryQueue };
+
+        function truncate(text: string, maxLength: number = 60): string {
+            return text.length > maxLength ? text.slice(0, maxLength - 3) + '...' : text;
+        }
     }
 
     /**
@@ -219,17 +226,22 @@ export class ExtractLinksUseCase {
      * Wait for rate limit reset with countdown
      */
     private async waitForRateLimitReset(): Promise<void> {
-        this.logger.info(`⏳ Waiting for rate limit reset...`);
         const resetTime = this.tweetScraper.getRateLimitResetTime();
         const endWait = resetTime + ExtractLinksUseCase.RATE_LIMIT_BUFFER_MS;
+        const totalWaitSeconds = Math.ceil((endWait - Date.now()) / 1000);
+
+        const spinner = this.logger.await(`Waiting for rate limit reset (${totalWaitSeconds}s)...`);
+        spinner.start();
 
         while (Date.now() < endWait) {
             const remaining = Math.ceil((endWait - Date.now()) / 1000);
             if (remaining > 0 && remaining % ExtractLinksUseCase.COUNTDOWN_INTERVAL === 0) {
-                this.logger.info(`⏳ ${remaining}s remaining...`);
+                spinner.update(`Waiting for rate limit reset (${remaining}s remaining)`);
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
+
+        spinner.stop();
 
         // Clear the rate limit now that we've waited
         this.tweetScraper.clearRateLimit();

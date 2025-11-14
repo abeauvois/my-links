@@ -1,9 +1,9 @@
 #!/usr/bin/env bun
 
-import { TwitterScraper } from './src/infrastructure/adapters/TwitterScraper.js';
-import { AnthropicAnalyzer } from './src/infrastructure/adapters/AnthropicAnalyzer.js';
-import { EnvConfig } from './src/infrastructure/config/EnvConfig.js';
-import { CliuiLogger } from './src/infrastructure/adapters/CliuiLogger.js';
+import { TwitterScraper } from '../../../adapters/TwitterScraper.js';
+import { AnthropicAnalyzer } from '../../../adapters/AnthropicAnalyzer.js';
+import { EnvConfig } from '../../../config/EnvConfig.js';
+import { CliuiLogger } from '../../../adapters/CliuiLogger.js';
 import { readFileSync } from 'fs';
 
 async function testTwitterEnrichment() {
