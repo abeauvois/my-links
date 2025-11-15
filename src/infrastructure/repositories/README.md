@@ -12,13 +12,14 @@ The Repository pattern provides:
 
 ## Implementations
 
-### InMemoryLinkRepository
+### 1. InMemoryLinkRepository
 
-A simple in-memory implementation using a Map. Ideal for:
+A simple in-memory implementation using a Map. **Ideal for:**
 
 - Unit tests
 - Development and prototyping
 - Short-lived processes
+- Non-persistent duplicate detection
 
 **Example:**
 
@@ -48,6 +49,102 @@ const allLinks = await repo.findAll();
 
 // Clear repository (useful in tests)
 await repo.clear();
+```
+
+### 2. NotionLinkRepository ✨ NEW
+
+Stores links in a Notion database. **Ideal for:**
+
+- Production use with Notion integration
+- Persistent duplicate detection across runs
+- Syncing with existing Notion databases
+- Team collaboration
+
+**Example:**
+
+```typescript
+import { NotionLinkRepository } from "./repositories/NotionLinkRepository.js";
+import { EmailLink } from "../../domain/entities/EmailLink.js";
+
+const repo = new NotionLinkRepository(
+  process.env.NOTION_TOKEN!,
+  process.env.NOTION_DATABASE_ID!
+);
+
+// Check if a link exists in Notion
+const exists = await repo.exists("https://example.com");
+
+// Find a specific link
+const found = await repo.findByUrl("https://example.com");
+
+// Save a new link (or update if exists)
+const link = new EmailLink(
+  "https://example.com",
+  "Tech",
+  "A tech article",
+  "email.eml"
+);
+await repo.save(link);
+
+// Get all links from Notion database
+const allLinks = await repo.findAll();
+
+// Note: clear() is not implemented (Notion API limitation)
+```
+
+**Features:**
+
+- Automatically creates new pages or updates existing ones
+- Uses Notion's data sources API for efficient lookups
+- Extracts existing tags and descriptions
+- Pagination support for large databases
+
+### 3. CsvLinkRepository ✨ NEW
+
+Stores links in a CSV file. **Ideal for:**
+
+- Simple file-based persistence
+- Easy inspection and editing (open in Excel/Numbers)
+- Backup and version control
+- Offline duplicate detection
+
+**Example:**
+
+```typescript
+import { CsvLinkRepository } from "./repositories/CsvLinkRepository.js";
+import { EmailLink } from "../../domain/entities/EmailLink.js";
+
+const repo = new CsvLinkRepository("./my-links.csv");
+
+// Works like other repositories
+const exists = await repo.exists("https://example.com");
+
+// Save to CSV
+await repo.save(
+  new EmailLink("https://example.com", "Tech", "Article", "email.eml")
+);
+
+// Read from CSV
+const allLinks = await repo.findAll();
+
+// Clear CSV file
+await repo.clear();
+```
+
+**Features:**
+
+- Proper CSV escaping (handles commas, quotes, newlines)
+- In-memory caching for performance
+- Automatic file creation
+- Update detection (no duplicates)
+- Human-readable format
+
+**CSV Format:**
+
+```csv
+URL,Tag,Description,SourceFile
+https://example.com,Tech,A tech article,email.eml
+"https://example.com/article?param=1,2",Business,"Description with ""quotes""",file.eml
 ```
 
 ## Usage in Workflow
@@ -126,42 +223,7 @@ for (const email of newEmails) {
 }
 ```
 
-## Future Implementations
-
-You can create additional repository implementations:
-
-### NotionLinkRepository (Suggested)
-
-```typescript
-export class NotionLinkRepository implements ILinkRepository {
-  constructor(private notionClient: Client, private databaseId: string) {}
-
-  async exists(url: string): Promise<boolean> {
-    // Use Notion API to check if page with URL exists
-    const page = await this.findPageByUrl(url);
-    return page !== null;
-  }
-
-  // ... implement other methods
-}
-```
-
-### CsvLinkRepository (Suggested)
-
-```typescript
-export class CsvLinkRepository implements ILinkRepository {
-  constructor(private filePath: string) {}
-
-  async exists(url: string): Promise<boolean> {
-    const links = await this.findAll();
-    return links.some((link) => link.url === url);
-  }
-
-  // ... implement other methods
-}
-```
-
-### CompositeRepository (Advanced)
+## Advanced: CompositeRepository
 
 Combine multiple repositories:
 
@@ -190,7 +252,11 @@ const composite = new CompositeRepository([
 
 ## Testing
 
-See `src/infrastructure/tests/unit/test-deduplication.ts` for comprehensive test examples.
+Comprehensive tests are available:
+
+- **Deduplication Stage**: `src/infrastructure/tests/unit/test-deduplication.ts`
+- **CSV Repository**: `src/infrastructure/tests/unit/test-csv-repository.ts`
+- **Notion Repository**: Requires live Notion API credentials (see integration tests)
 
 Key testing patterns:
 
@@ -211,6 +277,60 @@ expect(results).toHaveLength(0); // Duplicate filtered
 expect(stage.getDuplicateCount()).toBe(1);
 ```
 
+## Quick Start Examples
+
+### Example 1: Deduplicate Against CSV File
+
+```typescript
+import { CsvLinkRepository } from "../repositories/CsvLinkRepository.js";
+import { DeduplicationStage } from "../workflow/stages/DeduplicationStage.js";
+
+// Load existing links from CSV
+const repo = new CsvLinkRepository("./existing-links.csv");
+
+// Create deduplication stage
+const deduplicator = new DeduplicationStage(repo, logger);
+
+// Add to your pipeline
+const pipeline = new Pipeline(emailParser).pipe(deduplicator);
+```
+
+### Example 2: Deduplicate Against Notion
+
+```typescript
+import { NotionLinkRepository } from "../repositories/NotionLinkRepository.js";
+import { DeduplicationStage } from "../workflow/stages/DeduplicationStage.js";
+
+// Connect to Notion database
+const repo = new NotionLinkRepository(
+  process.env.NOTION_TOKEN!,
+  process.env.NOTION_DATABASE_ID!
+);
+
+// Create deduplication stage
+const deduplicator = new DeduplicationStage(repo, logger);
+
+// Add to your pipeline
+const pipeline = new Pipeline(emailParser).pipe(deduplicator);
+```
+
+### Example 3: Composite (Check Both CSV and Notion)
+
+```typescript
+import { CompositeRepository } from "../repositories/CompositeRepository.js";
+import { CsvLinkRepository } from "../repositories/CsvLinkRepository.js";
+import { NotionLinkRepository } from "../repositories/NotionLinkRepository.js";
+
+// Combine multiple repositories
+const composite = new CompositeRepository([
+  new CsvLinkRepository("./backup.csv"),
+  new NotionLinkRepository(notionToken, databaseId),
+]);
+
+// Will check both sources for duplicates
+const deduplicator = new DeduplicationStage(composite, logger);
+```
+
 ## Benefits
 
 1. **Prevents Duplicate Exports**: Don't re-process links already in Notion/CSV
@@ -218,3 +338,5 @@ expect(stage.getDuplicateCount()).toBe(1);
 3. **Testable**: Easy to unit test without external dependencies
 4. **Performance**: Skip unnecessary API calls and processing
 5. **Auditable**: Track how many duplicates were filtered
+6. **Flexible Storage**: Choose between in-memory, CSV, Notion, or custom implementations
+7. **Production-Ready**: Both CSV and Notion implementations are fully tested

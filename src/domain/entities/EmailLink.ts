@@ -6,14 +6,37 @@ export class EmailLink {
         public readonly url: string,
         public readonly tag: string = '',
         public readonly description: string = '',
-        public readonly sourceFile: string = ''
+        public readonly sourceFile: string = '',
+        public readonly createdAt: Date = new Date(),
+        public readonly updatedAt: Date = new Date()
     ) { }
 
     /**
      * Creates a new EmailLink with updated categorization
      */
     withCategorization(tag: string, description: string): EmailLink {
-        return new EmailLink(this.url, tag, description, this.sourceFile);
+        return new EmailLink(
+            this.url,
+            tag,
+            description,
+            this.sourceFile,
+            this.createdAt,
+            new Date() // Update the updatedAt timestamp
+        );
+    }
+
+    /**
+     * Creates a new EmailLink with updated timestamp
+     */
+    withUpdatedTimestamp(): EmailLink {
+        return new EmailLink(
+            this.url,
+            this.tag,
+            this.description,
+            this.sourceFile,
+            this.createdAt,
+            new Date()
+        );
     }
 
     /**
