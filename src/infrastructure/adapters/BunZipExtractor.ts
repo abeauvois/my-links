@@ -5,9 +5,19 @@ import { IZipExtractor } from '../../domain/ports/IZipExtractor.js';
 
 /**
  * Adapter: Implements zip extraction using JSZip library
- * Also supports extracting EML files directly from a directory
+ * Also supports extracting files directly from a directory
+ * Supports multiple file extensions: .eml, .md, .text, .csv
  */
 export class BunZipExtractor implements IZipExtractor {
+    private readonly ALLOWED_EXTENSIONS = ['eml', 'md', 'text', 'csv'];
+
+    /**
+     * Check if a filename has an allowed extension
+     */
+    private hasAllowedExtension(filename: string): boolean {
+        const lowerFilename = filename.toLowerCase();
+        return this.ALLOWED_EXTENSIONS.some(ext => lowerFilename.endsWith(`.${ext}`));
+    }
     async extractEmlFiles(zipFilePath: string): Promise<Map<string, string>> {
         // Check if the path exists and determine if it's a directory or file
         try {
@@ -28,8 +38,8 @@ export class BunZipExtractor implements IZipExtractor {
             const emlFiles = new Map<string, string>();
 
             for (const [filename, zipEntry] of Object.entries(zip.files)) {
-                // Only process .eml files (not directories)
-                if (!zipEntry.dir && filename.toLowerCase().endsWith('.eml')) {
+                // Only process files with allowed extensions (not directories)
+                if (!zipEntry.dir && this.hasAllowedExtension(filename)) {
                     const content = await zipEntry.async('text');
                     emlFiles.set(filename, content);
                 }
@@ -48,7 +58,7 @@ export class BunZipExtractor implements IZipExtractor {
             const files = readdirSync(directoryPath);
 
             for (const filename of files) {
-                if (filename.toLowerCase().endsWith('.eml')) {
+                if (this.hasAllowedExtension(filename)) {
                     const filePath = join(directoryPath, filename);
                     const stats = statSync(filePath);
 
@@ -63,7 +73,7 @@ export class BunZipExtractor implements IZipExtractor {
 
             return emlFiles;
         } catch (error) {
-            throw new Error(`Failed to read EML files from directory: ${directoryPath}`);
+            throw new Error(`Failed to read files from directory: ${directoryPath}`);
         }
     }
 }
