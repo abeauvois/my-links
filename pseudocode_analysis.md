@@ -274,7 +274,7 @@ export class EmailExtractionService {
     zipFilePath: string
   ): Promise<Map<string, string>> {
     this.logger.info("📦 Extracting .eml files from zip...");
-    const emailFiles = await this.zipExtractor.extractEmlFiles(zipFilePath);
+    const emailFiles = await this.zipExtractor.extractFiles(zipFilePath);
     this.logger.info(`✅ Found ${emailFiles.size} email files`);
     return emailFiles;
   }

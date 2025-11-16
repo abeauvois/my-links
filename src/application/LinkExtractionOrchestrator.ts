@@ -1,5 +1,6 @@
 import { ILogger } from '../domain/ports/ILogger';
-import { QueuedLink } from './ExtractLinksUseCase';
+import { QueuedLink } from './QueuedLink.types';
+
 import { EmailExtractionService } from './services/EmailExtractionService';
 import { ExportService } from './services/ExportService';
 import { LinkAnalysisService } from './services/LinkAnalysisService';
@@ -20,17 +21,17 @@ export class LinkExtractionOrchestrator {
 
     /**
      * Execute the complete link extraction workflow
-     * @param zipFilePath Path to email archive (zip file or directory)
+     * @param sourcePath Path to emails source (zip file or directory)
      * @param outputCsvPath Path for CSV output
      * @param notionDatabaseId Notion database ID for export
      */
     async execute(
-        zipFilePath: string,
+        sourcePath: string,
         outputCsvPath: string,
         notionDatabaseId: string
     ): Promise<void> {
         // 1. Extract and parse emails
-        const emailLinks = await this.extractionService.extractAndParseEmails(zipFilePath);
+        const emailLinks = await this.extractionService.extractAndParseEmails(sourcePath);
 
         // 2. Analyze links with AI
         const { categorizedLinks, retryQueue } = await this.analysisService.analyzeLinks(emailLinks);
@@ -38,7 +39,7 @@ export class LinkExtractionOrchestrator {
         // 3. Handle retries with recursive logic for multiple attempts
         let allUpdatedUrls = new Set<string>();
         if (retryQueue.length > 0) {
-            allUpdatedUrls = await this.handleRetriesWithMultipleAttempts(retryQueue, categorizedLinks, outputCsvPath);
+            allUpdatedUrls = await this.handleRetriesWithMultipleAttempts(retryQueue, categorizedLinks);
         }
 
         // 4. Export final results
@@ -59,7 +60,6 @@ export class LinkExtractionOrchestrator {
     private async handleRetriesWithMultipleAttempts(
         initialQueue: QueuedLink[],
         categorizedLinks: any[],
-        outputCsvPath: string
     ): Promise<Set<string>> {
         let queue = initialQueue;
         const allUpdatedUrls = new Set<string>();

@@ -4,9 +4,12 @@ import { ILogger } from '../../domain/ports/ILogger.js';
 import { IZipExtractor } from '../../domain/ports/IZipExtractor.js';
 import { Pipeline, WorkflowExecutor } from '../../domain/workflow/index.js';
 import { EmailFile } from '../../domain/entities/EmailFile.js';
+import { IProducer } from '../../domain/workflow/IProducer.js';
 import { ZipFileProducer } from '../../infrastructure/workflow/producers/ZipFileProducer.js';
+import { SingleFolderProducer } from '../../infrastructure/workflow/producers/SingleFolderProducer.js';
 import { EmailParserStage } from '../../infrastructure/workflow/stages/EmailParserStage.js';
 import { EmailLinkCollector } from '../../infrastructure/workflow/consumers/EmailLinkCollector.js';
+import { statSync } from 'fs';
 
 /**
  * Service responsible for extracting and parsing email files using workflow pipeline
@@ -20,12 +23,12 @@ export class EmailExtractionService {
 
     /**
      * Extract email files from zip and parse links from them
-     * @param zipFilePath Path to the zip file or directory containing .eml files
+     * @param sourcePath Path to the zip file or directory containing .eml files
      * @returns Array of EmailLink objects with extracted links
      */
-    async extractAndParseEmails(zipFilePath: string): Promise<EmailLink[]> {
-        // Create workflow components
-        const producer = new ZipFileProducer(zipFilePath, this.zipExtractor);
+    async extractAndParseEmails(sourcePath: string): Promise<EmailLink[]> {
+        // Determine source type and create appropriate producer
+        const producer = this.createProducer(sourcePath);
         const pipeline = this.createPipeline();
         const consumer = new EmailLinkCollector(this.logger);
 
@@ -39,7 +42,7 @@ export class EmailExtractionService {
         // Execute with error handling
         await workflow.execute({
             onStart: async () => {
-                this.logger.info('� Extracting .eml files from zip...');
+                this.logger.info('📦 Extracting .eml files...');
             },
             onError: async (error: Error, item: EmailFile) => {
                 this.logger.warning(`  ⚠️  ${item.filename}: ${error.message}`);
@@ -51,6 +54,32 @@ export class EmailExtractionService {
 
         // Return collected links
         return consumer.getEmailLinks();
+    }
+
+    /**
+     * Create appropriate producer based on source path type
+     * @param sourcePath Path to zip file or directory
+     * @returns Producer for the source type
+     */
+    private createProducer(sourcePath: string): IProducer<EmailFile> {
+        try {
+            const stats = statSync(sourcePath);
+
+            if (stats.isDirectory()) {
+                this.logger.debug(`Source is a directory: ${sourcePath}`);
+                return new SingleFolderProducer(sourcePath);
+            } else if (stats.isFile()) {
+                this.logger.debug(`Source is a file: ${sourcePath}`);
+                return new ZipFileProducer(sourcePath, this.zipExtractor);
+            } else {
+                throw new Error(`Source path is neither a file nor a directory: ${sourcePath}`);
+            }
+        } catch (error) {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+                throw new Error(`Source path not found: ${sourcePath}`);
+            }
+            throw error;
+        }
     }
 
     /**

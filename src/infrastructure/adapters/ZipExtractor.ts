@@ -17,7 +17,7 @@ export class ZipExtractor implements IZipExtractor {
         return this.ALLOWED_EXTENSIONS.some(ext => lowerFilename.endsWith(`.${ext}`));
     }
 
-    async extractEmlFiles(zipFilePath: string): Promise<Map<string, string>> {
+    async extractFiles(zipFilePath: string): Promise<Map<string, string>> {
         // Validate that the path exists and is a file
         try {
             const stats = statSync(zipFilePath);

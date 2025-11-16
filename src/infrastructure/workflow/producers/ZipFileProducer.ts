@@ -12,7 +12,7 @@ export class ZipFileProducer implements IProducer<EmailFile> {
     ) { }
 
     async *produce(): AsyncIterable<EmailFile> {
-        const emailFiles = await this.zipExtractor.extractEmlFiles(this.filePath);
+        const emailFiles = await this.zipExtractor.extractFiles(this.filePath);
 
         for (const [filename, content] of emailFiles.entries()) {
             yield {

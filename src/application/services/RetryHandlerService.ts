@@ -2,8 +2,9 @@ import { EmailLink } from '../../domain/entities/EmailLink';
 import { ILinkAnalyzer } from '../../domain/ports/ILinkAnalyzer';
 import { ILogger } from '../../domain/ports/ILogger';
 import { ITweetScraper } from '../../domain/ports/ITweetScraper';
-import { QueuedLink } from '../ExtractLinksUseCase';
+
 import { ExtractLinksConfig } from '../config/ExtractLinksConfig';
+import { QueuedLink } from '../QueuedLink.types';
 
 /**
  * Result of handling a retry queue

@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
 import { cli } from 'cleye';
-import { ExtractLinksUseCase } from '../application/ExtractLinksUseCase.js';
 import { ZipExtractor } from '../infrastructure/adapters/ZipExtractor.js';
 import { EmailLinksExtractor } from '../infrastructure/adapters/EmailLinksExtractor.js';
 import { AnthropicAnalyzer } from '../infrastructure/adapters/AnthropicAnalyzer.js';
@@ -10,6 +9,11 @@ import { NotionDatabaseWriter } from '../infrastructure/adapters/NotionDatabaseW
 import { TwitterScraper } from '../infrastructure/adapters/TwitterScraper.js';
 import { EnvConfig } from '../infrastructure/config/EnvConfig.js';
 import { CliuiLogger } from '../infrastructure/adapters/CliuiLogger.js';
+import { EmailExtractionService } from '../application/services/EmailExtractionService.js';
+import { LinkAnalysisService } from '../application/services/LinkAnalysisService.js';
+import { RetryHandlerService } from '../application/services/RetryHandlerService.js';
+import { ExportService } from '../application/services/ExportService.js';
+import { LinkExtractionOrchestrator } from '../application/LinkExtractionOrchestrator.js';
 
 /**
  * CLI Entry Point: Email Link Extractor
@@ -88,10 +92,9 @@ async function main() {
     const twitterBearerToken = config.get('TWITTER_BEARER_TOKEN');
     console.log('✅ Configuration loaded\n');
 
-    // Initialize logger (infrastructure layer)
-    const logger = new CliuiLogger();
 
     // Initialize adapters (infrastructure layer)
+    const logger = new CliuiLogger();
     const zipExtractor = new ZipExtractor();
     const linksExtractor = new EmailLinksExtractor();
     const linkAnalyzer = new AnthropicAnalyzer(anthropicApiKey, logger);
@@ -99,20 +102,23 @@ async function main() {
     const notionWriter = new NotionDatabaseWriter(notionToken);
     const tweetScraper = new TwitterScraper(twitterBearerToken, logger);
 
+    // Initialize services (application layer)
+    const extractionService = new EmailExtractionService(zipExtractor, linksExtractor, logger);
+    const analysisService = new LinkAnalysisService(linkAnalyzer, tweetScraper, logger);
+    const retryHandler = new RetryHandlerService(tweetScraper, linkAnalyzer, logger);
+    const exportService = new ExportService(csvWriter, notionWriter, logger);
+
     // Initialize use case (application layer)
-    const useCase = new ExtractLinksUseCase(
-      zipExtractor,
-      linksExtractor,
-      linkAnalyzer,
-      csvWriter,
-      notionWriter,
-      tweetScraper,
+    const useCase = new LinkExtractionOrchestrator(
+      extractionService,
+      analysisService,
+      retryHandler,
+      exportService,
       logger
     );
 
     // Execute the workflow
     await useCase.execute(inputPath, outputCsvPath, notionDatabaseId);
-
 
     console.log('\n✨ Success! Your links have been extracted and categorized.\n');
     process.exit(0);

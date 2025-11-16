@@ -7,5 +7,5 @@ export interface IZipExtractor {
      * @param zipFilePath Path to the zip file
      * @returns Map of filename to file content
      */
-    extractEmlFiles(zipFilePath: string): Promise<Map<string, string>>;
+    extractFiles(zipFilePath: string): Promise<Map<string, string>>;
 }

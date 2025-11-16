@@ -84,7 +84,7 @@ class ZipFileProducer implements IProducer<EmailFile> {
   ) {}
 
   async *produce(): AsyncIterable<EmailFile> {
-    const files = await this.zipExtractor.extractEmlFiles(this.filePath);
+    const files = await this.zipExtractor.extractFiles(this.filePath);
     for (const [filename, content] of files.entries()) {
       yield { filename, content };
     }

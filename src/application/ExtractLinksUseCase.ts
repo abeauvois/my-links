@@ -29,7 +29,7 @@ export class ExtractLinksUseCase {
 
     constructor(
         private readonly zipExtractor: IZipExtractor,
-        private readonly LinksExtractor: ILinksExtractor,
+        private readonly linksExtractor: ILinksExtractor,
         private readonly linkAnalyzer: ILinkAnalyzer,
         private readonly csvWriter: ICsvWriter,
         private readonly notionWriter: INotionWriter,
@@ -37,7 +37,7 @@ export class ExtractLinksUseCase {
         private readonly logger: ILogger
     ) {
         // Initialize the new service-based architecture
-        const extractionService = new EmailExtractionService(zipExtractor, LinksExtractor, logger);
+        const extractionService = new EmailExtractionService(zipExtractor, linksExtractor, logger);
         const analysisService = new LinkAnalysisService(linkAnalyzer, tweetScraper, logger);
         const retryHandler = new RetryHandlerService(tweetScraper, linkAnalyzer, logger);
         const exportService = new ExportService(csvWriter, notionWriter, logger);
