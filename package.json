@@ -12,6 +12,7 @@
     "cli": "bun run src/cli/index.ts",
     "cli:help": "bun run src/cli/index.ts --help",
     "cli:version": "bun run src/cli/index.ts --version",
+    "cli:select": "bun run src/cli/index.ts select",
     "start": "bun run src/cli/index.ts",
     "dev": "bun run --watch src/cli/index.ts",
     "it": "bun run test:integration:notion && bun run test:integration:twitter",
@@ -23,12 +24,13 @@
     "test:e2e:folder": "bun run src/infrastructure/tests/e2e/test-workflow-single-folder-producer.ts",
     "test:unit": "bun run src/infrastructure/tests/unit/test-csv-repository.ts && bun run src/infrastructure/tests/unit/test-deduplication.ts"
   },
-
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
+    "@clack/prompts": "^0.11.0",
     "@notionhq/client": "^5.4.0",
     "@poppinss/cliui": "^6.5.0",
     "cleye": "^2.0.0",
+    "csv-parse": "^6.1.0",
     "jszip": "^3.10.1"
   },
   "devDependencies": {
