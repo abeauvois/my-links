@@ -90,7 +90,7 @@ export class NotionDatabaseWriter implements INotionWriter {
             // Step 2: Query each data source for pages matching the URL
             // Note: Using 'any' for dataSources.query as the SDK client types don't expose this method yet
             for (const dataSource of database.data_sources) {
-                const response = await (this.client as any).dataSources.query({
+                const response = await (this.client).dataSources.query({
                     data_source_id: dataSource.id,
                     filter: {
                         property: 'Link',

@@ -51,10 +51,6 @@ export class ExtractLinksUseCase {
         );
     }
 
-    static isTwitterUrl(url: string): boolean {
-        return url.includes('twitter.com/') || url.includes('x.com/') || url.includes('t.co/');
-    }
-
     /**
      * Executes the complete link extraction workflow
      * Now delegates to the new orchestrator for improved architecture

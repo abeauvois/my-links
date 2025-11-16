@@ -9,13 +9,18 @@
   "scripts": {
     "build": "bun run build:lib",
     "build:lib": "cd packages/cached-http-client && bun run build",
+    "cli": "bun run src/cli/index.ts",
+    "cli:help": "bun run src/cli/index.ts --help",
+    "cli:version": "bun run src/cli/index.ts --version",
     "start": "bun run src/cli/index.ts",
     "dev": "bun run --watch src/cli/index.ts"
   },
+
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",
     "@notionhq/client": "^5.4.0",
     "@poppinss/cliui": "^6.5.0",
+    "cleye": "^2.0.0",
     "jszip": "^3.10.1"
   },
   "devDependencies": {

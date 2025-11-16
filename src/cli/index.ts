@@ -1,7 +1,8 @@
 #!/usr/bin/env bun
 
+import { cli } from 'cleye';
 import { ExtractLinksUseCase } from '../application/ExtractLinksUseCase.js';
-import { BunZipExtractor } from '../infrastructure/adapters/BunZipExtractor.js';
+import { ZipExtractor } from '../infrastructure/adapters/ZipExtractor.js';
 import { EmailLinksExtractor } from '../infrastructure/adapters/EmailLinksExtractor.js';
 import { AnthropicAnalyzer } from '../infrastructure/adapters/AnthropicAnalyzer.js';
 import { CsvFileWriter } from '../infrastructure/adapters/CsvFileWriter.js';
@@ -12,22 +13,39 @@ import { CliuiLogger } from '../infrastructure/adapters/CliuiLogger.js';
 
 /**
  * CLI Entry Point: Email Link Extractor
+ * Modern CLI powered by Cleye
  */
-async function main() {
-  try {
-    // Parse command line arguments
-    const args = process.argv.slice(2);
+const argv = cli({
+  name: 'email-link-extractor',
+  version: '1.0.0',
 
-    if (args.length === 0 || args.includes('--help') || args.includes('-h')) {
-      console.log(`
-Email Link Extractor - Extract and categorize links from email files
+  parameters: [
+    '<input-path>',  // Required positional argument (zip file or folder)
+    '[output-csv]'   // Optional positional argument
+  ],
 
-Usage:
-  bun run src/cli/index.ts <zip-file> [output-csv]
+  flags: {
+    verbose: {
+      type: Boolean,
+      description: 'Enable verbose logging',
+      alias: 'v',
+      default: false
+    }
+  },
 
-Arguments:
-  <zip-file>    Path to the zip file containing .eml files (required)
-  [output-csv]  Path for the output CSV file (default: output.csv)
+  help: {
+    description: 'Extract and categorize links from email files',
+    usage: 'bun run src/cli/index.ts <input-path> [output-csv]',
+    examples: [
+      'bun run src/cli/index.ts mylinks.zip',
+      'bun run src/cli/index.ts data/fixtures/test_mylinks',
+      'bun run src/cli/index.ts mylinks.zip results.csv',
+      'bun run src/cli/index.ts mylinks.zip --verbose'
+    ],
+
+    render: (nodes, renderers) => {
+      const defaultRender = renderers.render(nodes);
+      return `${defaultRender}
 
 Environment Variables:
   ANTHROPIC_API_KEY         Your Anthropic API key (required, from .env file)
@@ -35,25 +53,30 @@ Environment Variables:
   NOTION_DATABASE_ID        Your Notion database ID (required, from .env file)
   TWITTER_BEARER_TOKEN      Your Twitter API v2 bearer token (required for tweet content extraction)
 
-Examples:
-  bun run src/cli/index.ts mylinks.zip
-  bun run src/cli/index.ts mylinks.zip results.csv
-
 Architecture:
   This tool uses Hexagonal Architecture (Ports & Adapters):
   - Domain layer: Core business logic
   - Application layer: Use cases
   - Infrastructure layer: External adapters (Anthropic, Bun, etc.)
-            `);
-      process.exit(0);
+`;
     }
+  }
+});
 
-    const zipFilePath = args[0];
-    const outputCsvPath = args[1] || 'output.csv';
+async function main() {
+  try {
+    const inputPath = argv._.inputPath;
+    const outputCsvPath = argv._.outputCsv || 'output.csv';
+    const verbose = argv.flags.verbose;
 
     console.log('🚀 Email Link Extractor\n');
-    console.log(`📥 Input:  ${zipFilePath}`);
-    console.log(`📤 Output: ${outputCsvPath}\n`);
+    console.log(`📥 Input:  ${inputPath}`);
+    console.log(`📤 Output: ${outputCsvPath}`);
+
+    if (verbose) {
+      console.log(`🔊 Verbose: enabled`);
+    }
+    console.log();
 
     // Load configuration from .env
     console.log('⚙️  Loading configuration...');
@@ -69,8 +92,8 @@ Architecture:
     const logger = new CliuiLogger();
 
     // Initialize adapters (infrastructure layer)
-    const zipExtractor = new BunZipExtractor();
-    const LinksExtractor = new EmailLinksExtractor();
+    const zipExtractor = new ZipExtractor();
+    const linksExtractor = new EmailLinksExtractor();
     const linkAnalyzer = new AnthropicAnalyzer(anthropicApiKey, logger);
     const csvWriter = new CsvFileWriter();
     const notionWriter = new NotionDatabaseWriter(notionToken);
@@ -79,7 +102,7 @@ Architecture:
     // Initialize use case (application layer)
     const useCase = new ExtractLinksUseCase(
       zipExtractor,
-      LinksExtractor,
+      linksExtractor,
       linkAnalyzer,
       csvWriter,
       notionWriter,
@@ -88,12 +111,17 @@ Architecture:
     );
 
     // Execute the workflow
-    await useCase.execute(zipFilePath, outputCsvPath, notionDatabaseId);
+    await useCase.execute(inputPath, outputCsvPath, notionDatabaseId);
+
 
     console.log('\n✨ Success! Your links have been extracted and categorized.\n');
     process.exit(0);
   } catch (error) {
     console.error('\n❌ Error:', error instanceof Error ? error.message : 'Unknown error');
+    if (argv.flags.verbose && error instanceof Error) {
+      console.error('\nStack trace:');
+      console.error(error.stack);
+    }
     console.error('\nFor help, run: bun run src/cli/index.ts --help\n');
     process.exit(1);
   }

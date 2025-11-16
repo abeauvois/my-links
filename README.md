@@ -46,29 +46,63 @@ echo "ANTHROPIC_API_KEY=your-api-key-here" > .env
 
 ## Usage
 
-### Basic Usage
+### CLI (Powered by Cleye)
+
+The CLI now uses [Cleye](https://github.com/privatenumber/cleye) - a modern, lightweight, and type-safe CLI framework.
+
+#### Basic Usage
+
+The CLI accepts both **zip files** and **folders** containing `.eml` files:
 
 ```bash
+# From a zip file
+bun run cli mylinks.zip
+# or
 bun run src/cli/index.ts mylinks.zip
+
+# From a folder
+bun run cli data/fixtures/test_mylinks
+# or
+bun run src/cli/index.ts data/fixtures/test_mylinks
 ```
 
 This will:
 
-1. Extract all `.eml` files from `mylinks.zip`
+1. Extract all `.eml` files from the zip or folder
 2. Parse each email and extract the main HTTP link
 3. Use Claude 3.5 Haiku to categorize and describe each link
 4. Generate `output.csv` with columns: `link`, `tag`, `description`
 
-### Custom Output File
+#### Custom Output File
 
 ```bash
-bun run src/cli/index.ts mylinks.zip results.csv
+bun run cli mylinks.zip results.csv
+# or with folder
+bun run cli data/fixtures/test_mylinks results.csv
 ```
 
-### Help
+#### Verbose Mode
+
+Enable detailed logging with stack traces:
 
 ```bash
+bun run cli mylinks.zip --verbose
+# or short form
+bun run cli mylinks.zip -v
+```
+
+#### Help & Version
+
+```bash
+# Show help
+bun run cli:help
+# or
 bun run src/cli/index.ts --help
+
+# Show version
+bun run cli:version
+# or
+bun run src/cli/index.ts --version
 ```
 
 ## Output Format

@@ -10,7 +10,7 @@
  * No mocking - uses real fixtures and adapters
  */
 
-import { BunZipExtractor } from '../../adapters/BunZipExtractor.js';
+import { ZipExtractor } from '../../adapters/ZipExtractor.js';
 import { EmailLinksExtractor } from '../../adapters/EmailLinksExtractor.js';
 import { ZipFileProducer } from '../../workflow/producers/ZipFileProducer.js';
 import { EmailParserStage } from '../../workflow/stages/EmailParserStage.js';
@@ -51,7 +51,7 @@ async function runWorkflowTest() {
     console.log(`📦 Test zip file: ${testZipPath}\n`);
 
     // Initialize real adapters (no mocking)
-    const zipExtractor = new BunZipExtractor();
+    const zipExtractor = new ZipExtractor();
     const linksExtractor = new EmailLinksExtractor();
     const logger = new TestLogger();
 
