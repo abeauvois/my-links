@@ -1,0 +1,410 @@
+# Cline AI Assistant Rules for Email Links Monorepo
+
+## 🎯 Project Overview
+
+This is a TypeScript/Bun monorepo for extracting and analyzing links from email files (.eml).
+
+**Architecture**: Hexagonal Architecture (Ports & Adapters)
+**Runtime**: Bun (not Node.js)
+**Testing Framework**: Bun's built-in test runner
+**Development Approach**: Test-Driven Development (TDD)
+
+## 🏗️ Architecture Rules
+
+### Layer Boundaries (STRICT)
+
+```
+┌─────────────────────────────────────┐
+│  CLI (User Interface)               │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│  Application (Use Cases)            │
+│  - Services                          │
+│  - Orchestrators                     │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│  Domain (Core Business Logic)       │
+│  - Entities                          │
+│  - Ports (Interfaces)                │
+│  - Workflow (Pipeline abstractions) │
+└──────────────┬──────────────────────┘
+               │
+┌──────────────▼──────────────────────┐
+│  Infrastructure (Adapters)          │
+│  - Repositories                      │
+│  - External API clients              │
+│  - File system operations            │
+└─────────────────────────────────────┘
+```
+
+**RULE 1**: Domain NEVER imports from Application or Infrastructure
+**RULE 2**: Application can import from Domain only
+**RULE 3**: Infrastructure implements Domain ports (interfaces)
+**RULE 4**: CLI orchestrates Application layer
+
+### Dependency Direction
+
+```
+CLI → Application → Domain ← Infrastructure
+```
+
+## 🧪 Test-Driven Development (TDD) Requirements
+
+### MANDATORY: Always Follow Red-Green-Refactor
+
+When creating new features:
+
+1. **RED**: Write failing tests first
+   ```typescript
+   // Example prompt response:
+   // "Let me write the tests first to define the expected behavior..."
+   ```
+
+2. **GREEN**: Implement minimal code to pass
+   ```typescript
+   // "Now implementing the simplest solution to make tests pass..."
+   ```
+
+3. **REFACTOR**: Clean up the code
+   ```typescript
+   // "Tests are passing. Let's refactor to improve quality..."
+   ```
+
+### Test Location Strategy
+
+- **Domain entities**: Co-located tests optional (prefer `/tests/unit/`)
+- **Application services**: `/tests/unit/`
+- **Infrastructure adapters**: `/tests/unit/` for logic, `/tests/integration/` for external APIs
+- **Complete workflows**: `/tests/e2e/`
+
+### Test Naming Convention
+
+```
+test-[component-name].ts
+```
+
+Examples:
+- `test-csv-repository.ts`
+- `test-email-extraction.ts`
+- `test-workflow-single-folder-producer.ts`
+
+## 📁 File Organization Rules
+
+### Where to Create New Code
+
+| Component Type | Location | Example |
+|----------------|----------|---------|
+| Domain Entity | `src/domain/entities/` | `EmailLink.ts` |
+| Domain Port | `src/domain/ports/` | `ILinkRepository.ts` |
+| Use Case | `src/application/` | `ExtractLinksUseCase.ts` |
+| Service | `src/application/services/` | `LinkAnalysisService.ts` |
+| Adapter | `src/infrastructure/adapters/` | `AnthropicAnalyzer.ts` |
+| Repository | `src/infrastructure/repositories/` | `NotionLinkRepository.ts` |
+| CLI Command | `src/cli/commands/` | `select.ts` |
+| Unit Test | `src/infrastructure/tests/unit/` | `test-*.ts` |
+| Integration Test | `src/infrastructure/tests/integration/` | `test-*.ts` |
+| E2E Test | `src/infrastructure/tests/e2e/` | `test-*.ts` |
+
+## 💻 Code Style & Conventions
+
+### TypeScript
+
+```typescript
+// ✅ GOOD: Explicit types
+async function analyzeLink(url: string): Promise<LinkAnalysis> {
+  return await this.analyzer.analyze(url);
+}
+
+// ❌ AVOID: Implicit any
+async function analyzeLink(url) {
+  return await this.analyzer.analyze(url);
+}
+```
+
+### Imports
+
+```typescript
+// ✅ GOOD: Use .js extension for imports (required by Bun/ESM)
+import { EmailLink } from './domain/entities/EmailLink.js';
+
+// ❌ WRONG: Missing .js extension
+import { EmailLink } from './domain/entities/EmailLink';
+```
+
+### Dependency Injection
+
+```typescript
+// ✅ GOOD: Constructor injection with interfaces
+export class LinkAnalysisService {
+  constructor(
+    private readonly analyzer: ILinkAnalyzer,
+    private readonly logger: ILogger
+  ) {}
+}
+
+// ❌ AVOID: Direct instantiation
+export class LinkAnalysisService {
+  private analyzer = new AnthropicAnalyzer();
+}
+```
+
+### Error Handling
+
+```typescript
+// ✅ GOOD: Explicit error types
+if (!url.startsWith('http')) {
+  throw new Error(`Invalid URL format: ${url}`);
+}
+
+// ✅ GOOD: Logging errors
+catch (error) {
+  this.logger.error(`Failed to analyze link: ${error.message}`);
+  throw error;
+}
+```
+
+## 🔄 When Modifying Existing Code
+
+### Always Check Tests First
+
+```
+1. Find related tests in src/infrastructure/tests/
+2. Run tests: bun run test:unit
+3. Ensure tests still pass after changes
+4. Add new tests for new behavior
+```
+
+### Refactoring Checklist
+
+- [ ] Tests written/updated BEFORE code changes
+- [ ] All existing tests still pass
+- [ ] No layer boundary violations
+- [ ] Dependencies injected via constructors
+- [ ] Error cases handled
+- [ ] Types are explicit (no `any`)
+
+## 🔧 Common Patterns
+
+### Creating a New Port (Interface)
+
+```typescript
+// 1. Define in src/domain/ports/INewPort.ts
+export interface INewPort {
+  doSomething(input: string): Promise<Result>;
+}
+
+// 2. Create adapter in src/infrastructure/adapters/NewPortAdapter.ts
+export class NewPortAdapter implements INewPort {
+  async doSomething(input: string): Promise<Result> {
+    // Implementation
+  }
+}
+
+// 3. Write tests in src/infrastructure/tests/unit/test-new-port-adapter.ts
+```
+
+### Creating a New Use Case
+
+```typescript
+// 1. Write test first
+// src/infrastructure/tests/unit/test-new-use-case.ts
+test("should perform expected behavior", async () => {
+  const mockPort = createMockPort();
+  const useCase = new NewUseCase(mockPort);
+  const result = await useCase.execute(input);
+  expect(result).toEqual(expected);
+});
+
+// 2. Implement use case
+// src/application/NewUseCase.ts
+export class NewUseCase {
+  constructor(private port: IPort) {}
+  
+  async execute(input: Input): Promise<Output> {
+    return await this.port.process(input);
+  }
+}
+```
+
+### Creating a New Repository
+
+```typescript
+// 1. Define interface in src/domain/ports/
+export interface ILinkRepository {
+  save(link: EmailLink): Promise<void>;
+  findByUrl(url: string): Promise<EmailLink | null>;
+}
+
+// 2. Write tests for implementation
+// src/infrastructure/tests/unit/test-new-repository.ts
+
+// 3. Implement in src/infrastructure/repositories/
+export class NewRepository implements ILinkRepository {
+  async save(link: EmailLink): Promise<void> {
+    // Implementation
+  }
+}
+```
+
+## 🚫 Anti-Patterns to AVOID
+
+### ❌ Don't Skip Tests
+
+```typescript
+// WRONG: Implementing without tests
+export class NewFeature {
+  doWork() {
+    // ... implementation without tests
+  }
+}
+
+// RIGHT: Test first, then implement
+test("should do expected work", () => {
+  const feature = new NewFeature();
+  expect(feature.doWork()).toEqual(expected);
+});
+```
+
+### ❌ Don't Violate Layer Boundaries
+
+```typescript
+// WRONG: Domain importing from Infrastructure
+// src/domain/entities/EmailLink.ts
+import { NotionClient } from '../../infrastructure/adapters/NotionClient.js';
+
+// RIGHT: Domain defines port, Infrastructure implements it
+// src/domain/ports/IRepository.ts
+export interface IRepository { ... }
+```
+
+### ❌ Don't Mock Everything
+
+```typescript
+// WRONG: Mocking simple logic
+const mockMapper = {
+  map: jest.fn(() => result)
+};
+
+// RIGHT: Use real implementation for simple logic
+const mapper = new RealMapper();
+const result = mapper.map(input);
+```
+
+### ❌ Don't Use Node.js APIs Without Bun Compatibility Check
+
+```typescript
+// CAREFUL: Ensure Bun supports the API
+import { promises as fs } from 'fs'; // ✅ Bun supports this
+import someLegacyModule from 'legacy-package'; // ⚠️ May not work in Bun
+```
+
+## 🎯 AI Assistant Behavior Guidelines
+
+### When Asked to Add a Feature
+
+1. **First Response**: "Let me start with TDD approach. I'll write tests first to define the expected behavior."
+2. Ask clarifying questions if needed:
+   - Which layer does this belong to?
+   - What are the inputs/outputs?
+   - Should this be a new port or use existing ones?
+3. Write failing tests
+4. Implement minimal solution
+5. Refactor with tests passing
+
+### When Asked to Fix a Bug
+
+1. **First**: Try to reproduce with a test
+2. Run existing tests to understand scope
+3. Fix the issue
+4. Ensure all tests pass
+
+### When Asked to Refactor
+
+1. **First**: Ensure tests exist for current behavior
+2. If no tests, write them first
+3. Refactor with tests passing
+4. Never change behavior without explicit request
+
+## 📚 Project-Specific Context
+
+### Current Features
+
+- Extract links from .eml files (zip or folder)
+- Analyze links with AI (Anthropic Claude)
+- Export to CSV, Notion
+- Deduplication of links
+- Twitter/social media URL enrichment
+- Rate limiting for APIs
+- Workflow pipeline system
+
+### Key Technologies
+
+- **Runtime**: Bun (not Node.js)
+- **Language**: TypeScript
+- **CLI**: Cleye framework
+- **UI**: @poppinss/cliui for terminal UI
+- **AI**: Anthropic Claude API
+- **APIs**: Notion, Twitter/X
+
+### Environment Variables
+
+Required in `.env`:
+- `ANTHROPIC_API_KEY` - For AI analysis
+- `NOTION_API_KEY` - For Notion export
+- `NOTION_DATABASE_ID` - Target Notion database
+- `TWITTER_AUTH_TOKEN` - For Twitter enrichment (optional)
+
+## 🏃 Running Commands
+
+### Development
+
+```bash
+bun run cli [file.zip|folder]        # Run CLI
+bun run cli:select                    # Interactive mode
+bun run dev                           # Watch mode
+```
+
+### Testing
+
+```bash
+bun run test:unit                     # Unit tests only
+bun run it                            # Integration tests
+bun run test:e2e                      # End-to-end tests
+```
+
+### Building
+
+```bash
+bun run build                         # Build workspace packages
+```
+
+## 📖 Documentation Reference
+
+- `TDD.md` - Comprehensive TDD guide with examples
+- `TESTING_GUIDE.md` - Testing strategies and patterns
+- `ARCHITECTURE_TESTING.md` - How to test hexagonal architecture
+- `AI_TDD_PROMPTS.md` - Ready-to-use prompts for common tasks
+- `README.md` - Project overview and usage
+
+## 🤝 Collaboration Notes
+
+### When Pair Programming with AI
+
+- Always explain WHY, not just WHAT
+- Ask for architecture review before implementing
+- Suggest improvements to existing patterns
+- Point out potential issues early
+
+### Code Review Mindset
+
+- Check for layer boundary violations
+- Verify tests exist and are meaningful
+- Ensure types are explicit
+- Look for proper error handling
+- Validate dependency injection usage
+
+---
+
+**Remember**: This project values **clean architecture**, **testability**, and **incremental development through TDD**. When in doubt, write a test first!

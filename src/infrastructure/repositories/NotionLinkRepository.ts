@@ -12,7 +12,10 @@ export class NotionLinkRepository implements ILinkRepository {
     private readonly databaseId: string;
 
     constructor(notionToken: string, databaseId: string) {
-        this.client = new Client({ auth: notionToken });
+        this.client = new Client({
+            auth: notionToken,
+            notionVersion: "2025-09-03",
+        });
         this.databaseId = databaseId;
     }
 

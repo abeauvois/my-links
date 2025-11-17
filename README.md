@@ -159,11 +159,49 @@ Then plug it into the use case - no other changes needed!
 - `bun run start`: Run the CLI
 - `bun run dev`: Run with auto-reload on changes
 
+### Testing
+
+This project follows **Test-Driven Development (TDD)** principles. Run tests with:
+
+```bash
+# Unit tests (fast, no external dependencies)
+bun run test:unit
+
+# Integration tests (requires API credentials)
+bun run it
+
+# E2E tests (complete workflows)
+bun run test:e2e
+
+# All tests
+bun run test:unit && bun run it && bun run test:e2e
+```
+
 ### Adding Features
 
-1. **New domain logic**: Add to `src/domain/`
-2. **New use case**: Add to `src/application/`
-3. **New adapter**: Implement a port interface in `src/infrastructure/adapters/`
+We follow a **TDD-first approach**. When adding new features:
+
+1. **Write tests first** - Define expected behavior through tests
+2. **Implement minimal code** - Make tests pass
+3. **Refactor** - Improve code quality while keeping tests green
+
+**Guidelines**:
+
+- **New domain logic**: Add to `src/domain/` (pure business logic, no dependencies)
+- **New use case**: Add to `src/application/` (orchestrate domain logic)
+- **New adapter**: Implement a port interface in `src/infrastructure/adapters/` (external integrations)
+
+### Architecture & Testing Documentation
+
+📚 **Comprehensive guides for TDD and architecture**:
+
+- **[TDD.md](./TDD.md)** - Test-Driven Development guide with Red-Green-Refactor cycle
+- **[TESTING_GUIDE.md](./TESTING_GUIDE.md)** - Testing strategies, patterns, and best practices
+- **[ARCHITECTURE_TESTING.md](./ARCHITECTURE_TESTING.md)** - How to test each layer of hexagonal architecture
+- **[AI_TDD_PROMPTS.md](./AI_TDD_PROMPTS.md)** - Ready-to-use prompts for AI assistants (Cline, Copilot, etc.)
+- **[.clinerules](./.clinerules)** - AI assistant rules for this project
+
+These guides help ensure consistent development practices, especially when working with AI coding assistants.
 
 ## License
 
