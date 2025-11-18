@@ -14,28 +14,30 @@ import { dirname } from 'path';
 
 export class FileTimestampRepository implements ITimestampRepository {
     private readonly timestampFilePath: string;
+    private readonly defaultTimestamp?: Date;
 
-    constructor(timestampFilePath: string = '.gmail-last-run') {
-        this.timestampFilePath = timestampFilePath;
+    constructor(timestampFilePath: string = '.gmail-last-run', defaultTimestamp?: Date) {
+        this.timestampFilePath = timestampFilePath || '.gmail-last-run';
+        this.defaultTimestamp = defaultTimestamp;
     }
 
     async getLastExecutionTime(): Promise<Date | null> {
         try {
             if (!existsSync(this.timestampFilePath)) {
-                return null;
+                return new Date(this.defaultTimestamp ?? 0);
             }
 
             const content = await readFile(this.timestampFilePath, 'utf-8');
             const timestamp = content.trim();
 
             if (!timestamp) {
-                return null;
+                return new Date(this.defaultTimestamp ?? 0);
             }
 
             return new Date(timestamp);
         } catch (error) {
             // If file doesn't exist or can't be read, treat as first run
-            return null;
+            return new Date(this.defaultTimestamp ?? 0);
         }
     }
 

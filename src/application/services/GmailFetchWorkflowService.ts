@@ -4,7 +4,6 @@ import { ILogger } from '../../domain/ports/ILogger.js';
 import { ITimestampRepository } from '../../domain/ports/ITimestampRepository.js';
 import { Pipeline, WorkflowExecutor } from '../../domain/workflow/index.js';
 import { GmailMessageProducer } from '../../infrastructure/workflow/producers/GmailMessageProducer.js';
-import { GmailMessageCollector } from '../../infrastructure/workflow/consumers/GmailMessageCollector.js';
 
 /**
  * Service responsible for fetching Gmail messages using workflow pipeline

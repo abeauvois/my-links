@@ -1,17 +1,17 @@
 import { command } from 'cleye';
-import { ZipExtractor } from '../../infrastructure/adapters/ZipExtractor.js';
-import { HttpLinksParser } from '../../infrastructure/adapters/HttpLinksParser.js';
-import { AnthropicAnalyzer } from '../../infrastructure/adapters/AnthropicAnalyzer.js';
-import { CsvFileWriter } from '../../infrastructure/adapters/CsvFileWriter.js';
-import { NotionLinkRepository } from '../../infrastructure/repositories/NotionLinkRepository.js';
-import { TwitterScraper } from '../../infrastructure/adapters/TwitterScraper.js';
-import { EnvConfig } from '../../infrastructure/config/EnvConfig.js';
-import { CliuiLogger } from '../../infrastructure/adapters/CliuiLogger.js';
-import { EmailExtractionWorkflowService } from '../../application/services/EmailExtractionWorkflowService';
-import { LinkAnalysisService } from '../../application/services/LinkAnalysisService.js';
-import { RetryHandlerService } from '../../application/services/RetryHandlerService.js';
-import { ExportService } from '../../application/services/ExportService.js';
-import { LinkExtractionOrchestrator } from '../../application/LinkExtractionOrchestrator.js';
+import { ZipExtractor } from '../../../src/infrastructure/adapters/ZipExtractor.js';
+import { HttpLinksParser } from '../../../src/infrastructure/adapters/HttpLinksParser.js';
+import { AnthropicAnalyzer } from '../../../src/infrastructure/adapters/AnthropicAnalyzer.js';
+import { CsvFileWriter } from '../../../src/infrastructure/adapters/CsvFileWriter.js';
+import { NotionLinkRepository } from '../../../src/infrastructure/repositories/NotionLinkRepository.js';
+import { TwitterScraper } from '../../../src/infrastructure/adapters/TwitterScraper.js';
+import { EnvConfig } from '../../../src/infrastructure/config/EnvConfig.js';
+import { CliuiLogger } from '../../../src/infrastructure/adapters/CliuiLogger.js';
+import { EmailExtractionWorkflowService } from '../../../src/application/services/EmailExtractionWorkflowService.js';
+import { LinkAnalysisService } from '../../../src/application/services/LinkAnalysisService.js';
+import { RetryHandlerService } from '../../../src/application/services/RetryHandlerService.js';
+import { ExportService } from '../../../src/application/services/ExportService.js';
+import { LinkExtractionOrchestrator } from '../../../src/application/LinkExtractionOrchestrator.js';
 
 export const notionCommand = command({
     name: 'notion',
@@ -75,6 +75,9 @@ export const notionCommand = command({
         const notionToken = config.get('NOTION_INTEGRATION_TOKEN');
         const twitterBearerToken = config.get('TWITTER_BEARER_TOKEN');
         console.log('✅ Configuration loaded\n');
+
+        // zip > email files > extract links > analyze links > export to Notion
+        // eml files source -> extractionService -> analysisService -> exportService
 
         // Initialize adapters (infrastructure layer)
         const logger = new CliuiLogger();

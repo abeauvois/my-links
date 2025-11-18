@@ -11,19 +11,22 @@ export class GmailMessage {
     public readonly from: string;
     public readonly receivedAt: Date;
     public readonly snippet: string;
+    public readonly rawContent: string;
 
     constructor(
         id: string,
         subject: string,
         from: string,
         receivedAt: Date,
-        snippet: string
+        snippet: string,
+        rawContent: string
     ) {
         this.id = id;
         this.subject = subject;
         this.from = from;
         this.receivedAt = receivedAt;
         this.snippet = snippet;
+        this.rawContent = rawContent;
     }
 
     /**
@@ -31,6 +34,13 @@ export class GmailMessage {
      */
     public toString(): string {
         return `[${this.receivedAt.toISOString()}] ${this.from}: ${this.subject}`;
+    }
+
+    /**
+     * Get a raw string representation of the message
+     */
+    public toRawString(): string {
+        return `[${this.receivedAt.toISOString()}] ${this.rawContent}`;
     }
 
     /**

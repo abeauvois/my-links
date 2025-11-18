@@ -84,19 +84,19 @@ Architecture:
     }
 
     // Import dependencies dynamically to avoid loading them for other commands
-    const { ZipExtractor } = await import('../infrastructure/adapters/ZipExtractor.js');
-    const { HttpLinksParser } = await import('../infrastructure/adapters/HttpLinksParser.js');
-    const { AnthropicAnalyzer } = await import('../infrastructure/adapters/AnthropicAnalyzer.js');
-    const { CsvFileWriter } = await import('../infrastructure/adapters/CsvFileWriter.js');
-    const { NotionLinkRepository } = await import('../infrastructure/repositories/NotionLinkRepository.js');
-    const { TwitterScraper } = await import('../infrastructure/adapters/TwitterScraper.js');
-    const { EnvConfig } = await import('../infrastructure/config/EnvConfig.js');
-    const { CliuiLogger } = await import('../infrastructure/adapters/CliuiLogger.js');
-    const { EmailExtractionWorkflowService } = await import('../application/services/EmailExtractionWorkflowService');
-    const { LinkAnalysisService } = await import('../application/services/LinkAnalysisService.js');
-    const { RetryHandlerService } = await import('../application/services/RetryHandlerService.js');
-    const { ExportService } = await import('../application/services/ExportService.js');
-    const { LinkExtractionOrchestrator } = await import('../application/LinkExtractionOrchestrator.js');
+    const { ZipExtractor } = await import('../../src/infrastructure/adapters/ZipExtractor.js');
+    const { HttpLinksParser } = await import('../../src/infrastructure/adapters/HttpLinksParser.js');
+    const { AnthropicAnalyzer } = await import('../../src/infrastructure/adapters/AnthropicAnalyzer.js');
+    const { CsvFileWriter } = await import('../../src/infrastructure/adapters/CsvFileWriter.js');
+    const { NotionLinkRepository } = await import('../../src/infrastructure/repositories/NotionLinkRepository.js');
+    const { TwitterScraper } = await import('../../src/infrastructure/adapters/TwitterScraper.js');
+    const { EnvConfig } = await import('../../src/infrastructure/config/EnvConfig.js');
+    const { CliuiLogger } = await import('../../src/infrastructure/adapters/CliuiLogger.js');
+    const { EmailExtractionWorkflowService } = await import('../../src/application/services/EmailExtractionWorkflowService.js');
+    const { LinkAnalysisService } = await import('../../src/application/services/LinkAnalysisService.js');
+    const { RetryHandlerService } = await import('../../src/application/services/RetryHandlerService.js');
+    const { ExportService } = await import('../../src/application/services/ExportService.js');
+    const { LinkExtractionOrchestrator } = await import('../../src/application/LinkExtractionOrchestrator.js');
 
     console.log('🚀 Email Link Extractor\n');
     console.log(`📥 Input:  ${inputPath}`);

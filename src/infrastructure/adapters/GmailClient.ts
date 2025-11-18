@@ -4,7 +4,7 @@ import { GmailMessage } from '../../domain/entities/GmailMessage.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
 
 /**
- * Infrastructure Adapter: GoogleGmailClient
+ * Infrastructure Adapter: GmailClient
  * 
  * Connects to Gmail API to fetch messages.
  * Implements IGmailClient port.
@@ -15,7 +15,7 @@ import { ILogger } from '../../domain/ports/ILogger.js';
  * - GMAIL_REFRESH_TOKEN
  */
 
-export class GoogleGmailClient implements IGmailClient {
+export class GmailClient implements IGmailClient {
     private gmail: any;
 
     constructor(
@@ -124,7 +124,9 @@ export class GoogleGmailClient implements IGmailClient {
             // Extract snippet (preview text)
             const snippet = messageData.snippet || '';
 
-            return new GmailMessage(messageData.id, subject, from, receivedAt, snippet);
+            const content = messageData.payload.parts.map((part: any) => decodeBase64(part.body.data || '')).join('')
+
+            return new GmailMessage(messageData.id, subject, from, receivedAt, snippet, content);
         } catch (error) {
             this.logger.error(
                 `Failed to parse message: ${error instanceof Error ? error.message : 'Unknown error'}`
@@ -133,3 +135,24 @@ export class GoogleGmailClient implements IGmailClient {
         }
     }
 }
+function decodeBase64(input: any): string {
+    if (!input) return '';
+
+    let str = String(input);
+
+    // Gmail returns base64url (URL-safe) encoded strings. Convert to regular base64.
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+
+    // Pad with '=' to make length a multiple of 4
+    const pad = str.length % 4;
+    if (pad) {
+        str += '='.repeat(4 - pad);
+    }
+
+    try {
+        return Buffer.from(str, 'base64').toString('utf8');
+    } catch {
+        return '';
+    }
+}
+

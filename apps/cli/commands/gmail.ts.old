@@ -1,10 +1,9 @@
 import * as p from '@clack/prompts';
-import { FetchRecentGmailsUseCase } from '../../application/FetchRecentGmailsUseCase.js';
-import { GoogleGmailClient } from '../../infrastructure/adapters/GoogleGmailClient.js';
-import { FileTimestampRepository } from '../../infrastructure/repositories/FileTimestampRepository.js';
-import { CliuiLogger } from '../../infrastructure/adapters/CliuiLogger.js';
-import { EnvConfig } from '../../infrastructure/config/EnvConfig.js';
-import { GmailMessage } from '../../domain/entities/GmailMessage.js';
+import { GoogleGmailClient } from '../../../src/infrastructure/adapters/GmailClient.js';
+import { FileTimestampRepository } from '../../../src/infrastructure/repositories/FileTimestampRepository.js';
+import { CliuiLogger } from '../../../src/infrastructure/adapters/CliuiLogger.js';
+import { EnvConfig } from '../../../src/infrastructure/config/EnvConfig.js';
+import { GmailMessage } from '../../../src/domain/entities/GmailMessage.js';
 
 /**
  * Gmail command - Fetch recent Gmail messages
@@ -32,7 +31,7 @@ export async function gmailCommand() {
         const timestampRepo = new FileTimestampRepository('.gmail-last-run');
 
         // Create workflow service
-        const { GmailFetchWorkflowService } = await import('../../application/services/GmailFetchWorkflowService.js');
+        const { GmailFetchWorkflowService } = await import('../../../src/application/services/GmailFetchWorkflowService.js');
         const workflowService = new GmailFetchWorkflowService(gmailClient, timestampRepo, logger, filterEmail);
 
         // Execute use case with workflow service
