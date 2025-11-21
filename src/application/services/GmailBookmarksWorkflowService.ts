@@ -5,7 +5,6 @@ import { IEmailClient } from '../../domain/ports/IEmailClient.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
 import { ITimestampRepository } from '../../domain/ports/ITimestampRepository.js';
 import { Pipeline, WorkflowExecutor } from '../../domain/workflow/index.js';
-
 import { BookmarkCollector } from '../../infrastructure/workflow/consumers/BookmarkCollector.js';
 import { GmailMessageProducer } from '../../infrastructure/workflow/producers/GmailMessageProducer.js';
 import { GmailContentAnalyserStage } from '../../infrastructure/workflow/stages/GmailContentAnalyserStage.js';
@@ -21,6 +20,11 @@ export class GmailBookmarksWorkflowService {
 
     /**
      * Fetch Gmail messages received since last execution
+     * 
+     * Note: While DataSourceFactory can create a GmailDataSource instance,
+     * this service uses GmailMessageProducer directly with the workflow pattern.
+     * The producer handles fetching messages and managing timestamp state.
+     * 
      * @returns Array of Bookmark objects
      */
     async fetchRecentMessages(): Promise<Bookmark[]> {
@@ -31,9 +35,9 @@ export class GmailBookmarksWorkflowService {
         );
 
         const stage = new GmailContentAnalyserStage(this.anthropicClient);
-        const pipeline = new Pipeline().addStage(stage);
+        const pipeline = new Pipeline<GmailMessage, Bookmark>().addStage(stage);
         const consumer = new BookmarkCollector(this.logger)
-        const workflow = new WorkflowExecutor(producer, pipeline, consumer)
+        const workflow = new WorkflowExecutor<GmailMessage, Bookmark>(producer, pipeline, consumer)
 
         // Execute with error handling
         await workflow.execute({

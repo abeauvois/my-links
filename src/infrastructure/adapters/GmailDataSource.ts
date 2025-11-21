@@ -1,7 +1,6 @@
 import { StructuredDataSource } from '../../domain/entities/StructuredDataSource.js';
 import { BaseContent } from '../../domain/entities/BaseContent.js';
 import { GmailMessage } from '../../domain/entities/GmailMessage.js';
-import { SourceAdapter } from '../../domain/entities/SourceAdapter.js';
 import { ApiIngestionConfig, IngestionConfig } from '../../domain/entities/IngestionConfig.js';
 import { IEmailClient } from '../../domain/ports/IEmailClient.js';
 import { ITimestampRepository } from '../../domain/ports/ITimestampRepository.js';

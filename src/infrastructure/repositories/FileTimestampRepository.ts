@@ -24,20 +24,33 @@ export class FileTimestampRepository implements ITimestampRepository {
     async getLastExecutionTime(): Promise<Date | null> {
         try {
             if (!existsSync(this.timestampFilePath)) {
-                return new Date(this.defaultTimestamp ?? 0);
+                if (this.defaultTimestamp === undefined) {
+                    throw new Error(`Timestamp file not found: ${this.timestampFilePath}. Please run the workflow at least once to initialize the timestamp.`);
+                }
+                return this.defaultTimestamp;
             }
 
             const content = await readFile(this.timestampFilePath, 'utf-8');
             const timestamp = content.trim();
 
             if (!timestamp) {
-                return new Date(this.defaultTimestamp ?? 0);
+                if (this.defaultTimestamp === undefined) {
+                    throw new Error(`Timestamp file is empty: ${this.timestampFilePath}. Please run the workflow at least once to initialize the timestamp.`);
+                }
+                return this.defaultTimestamp;
             }
 
             return new Date(timestamp);
         } catch (error) {
-            // If file doesn't exist or can't be read, treat as first run
-            return new Date(this.defaultTimestamp ?? 0);
+            // Re-throw our custom errors
+            if (error instanceof Error && error.message.includes('Timestamp file')) {
+                throw error;
+            }
+            // For other errors (file read issues, etc.), throw if no default timestamp
+            if (this.defaultTimestamp === undefined) {
+                throw new Error(`Failed to read timestamp file: ${this.timestampFilePath}. ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+            return this.defaultTimestamp;
         }
     }
 

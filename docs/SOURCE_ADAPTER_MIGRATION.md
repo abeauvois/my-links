@@ -216,6 +216,66 @@ Following TDD best practices from `.clinerules`:
 Total: 60+ tests passing
 ```
 
+## Factory Pattern
+
+A `DataSourceFactory` has been added to centralize and simplify data source creation:
+
+### Implementation
+
+```typescript
+// Located in: src/infrastructure/factories/DataSourceFactory.ts
+export class DataSourceFactory {
+  static create(
+    source: SourceAdapter,
+    logger: ILogger,
+    dependencies: DataSourceDependencies
+  ): AbstractDataSource<any, BaseContent> {
+    switch (source) {
+      case "Gmail":
+        return new GmailDataSource(
+          dependencies.emailClient!,
+          dependencies.timestampRepository!,
+          logger
+        );
+      case "ZipFile":
+        return new ZipFileDataSource(dependencies.zipExtractor!, logger);
+      case "Directory":
+        return new DirectoryDataSource(dependencies.directoryReader!, logger);
+      // ...
+    }
+  }
+}
+```
+
+### Usage Example
+
+```typescript
+import { DataSourceFactory } from "./infrastructure/factories/DataSourceFactory.js";
+
+// Instead of manually instantiating
+const dataSource = new GmailDataSource(emailClient, timestampRepo, logger);
+
+// Use the factory
+const dataSource = DataSourceFactory.create("Gmail", logger, {
+  emailClient,
+  timestampRepository: timestampRepo,
+});
+
+// Type-safe and centralized
+const source: SourceAdapter = "ZipFile";
+const dataSource = DataSourceFactory.create(source, logger, {
+  zipExtractor,
+});
+```
+
+### Benefits
+
+- **Centralized creation logic** - All instantiation in one place
+- **Type safety** - Compile-time checking of source types
+- **Dependency validation** - Runtime checks for required dependencies
+- **Easy testing** - Mock dependencies easily
+- **Extensibility** - Add new sources by updating switch statement
+
 ## Recommendations
 
 ### ✅ DO

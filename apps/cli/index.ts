@@ -2,6 +2,7 @@
 
 import { cli } from 'cleye';
 import { notionCommand } from './commands/notion.js';
+import { personalCommand } from './commands/personal.js';
 
 /**
  * CLI Entry Point: Email Link Extractor
@@ -27,7 +28,8 @@ cli({
   },
 
   commands: [
-    notionCommand
+    notionCommand,
+    personalCommand
   ],
 
   help: {
@@ -85,15 +87,12 @@ Architecture:
 
     // Import dependencies dynamically to avoid loading them for other commands
     const { ZipExtractor } = await import('../../src/infrastructure/adapters/ZipExtractor.js');
-    const { HttpLinksParser } = await import('../../src/infrastructure/adapters/HttpLinksParser.js');
-    const { UrlAndContextAnthropicAnalyser } = await import('../../src/infrastructure/adapters/UrlAndContextAnthropicAnalyser.js');
     const { CsvFileWriter } = await import('../../src/infrastructure/adapters/CsvFileWriter.js');
     const { NotionLinkRepository } = await import('../../src/infrastructure/repositories/NotionLinkRepository.js');
     const { TwitterClient } = await import('../../src/infrastructure/adapters/TwitterClient.js');
     const { EnvConfig } = await import('../../src/infrastructure/config/EnvConfig.js');
     const { CliuiLogger } = await import('../../src/infrastructure/adapters/CliuiLogger.js');
     const { ZipEmlFilesBookmarksWorkflowService } = await import('../../src/application/services/ZipEmlFilesBookmarksWorkflowService.js');
-    const { LinkAnalysisService } = await import('../../src/application/services/LinkAnalysisService.js');
     const { RetryHandlerService } = await import('../../src/application/services/RetryHandlerService.js');
     const { ExportService } = await import('../../src/application/services/ExportService.js');
     const { LinkExtractionOrchestrator } = await import('../../src/application/LinkExtractionOrchestrator.js');
@@ -120,29 +119,27 @@ Architecture:
     // Initialize adapters (infrastructure layer)
     const logger = new CliuiLogger();
     const zipExtractor = new ZipExtractor();
-    const httpLinksParser = new HttpLinksParser();
-    const linkAnalyzer = new UrlAndContextAnthropicAnalyser(anthropicApiKey, logger);
     const csvWriter = new CsvFileWriter();
     const notionRepository = new NotionLinkRepository(notionToken, notionDatabaseId);
     const tweetScraper = new TwitterClient(twitterBearerToken, logger);
 
     // Initialize services (application layer)
-    const extractionService = new ZipEmlFilesBookmarksWorkflowService(zipExtractor, httpLinksParser, logger);
-    const analysisService = new LinkAnalysisService(linkAnalyzer, tweetScraper, logger);
-    const retryHandler = new RetryHandlerService(tweetScraper, linkAnalyzer, logger);
-    const exportService = new ExportService(csvWriter, notionRepository, logger);
+    // const extractionService = new ZipEmlFilesBookmarksWorkflowService(zipExtractor, httpLinksParser, logger);
+    // const analysisService = new LinkAnalysisService(linkAnalyzer, tweetScraper, logger);
+    // const retryHandler = new RetryHandlerService(tweetScraper, linkAnalyzer, logger);
+    // const exportService = new ExportService(csvWriter, notionRepository, logger);
 
-    // Initialize use case (application layer)
-    const useCase = new LinkExtractionOrchestrator(
-      extractionService,
-      analysisService,
-      retryHandler,
-      exportService,
-      logger
-    );
+    // // Initialize use case (application layer)
+    // const useCase = new LinkExtractionOrchestrator(
+    //   extractionService,
+    //   analysisService,
+    //   retryHandler,
+    //   exportService,
+    //   logger
+    // );
 
-    // Execute the workflow
-    await useCase.execute(inputPath, outputCsvPath);
+    // // Execute the workflow
+    // await useCase.execute(inputPath, outputCsvPath);
 
     console.log('\n✨ Success! Your links have been extracted and categorized.\n');
   } catch (error) {

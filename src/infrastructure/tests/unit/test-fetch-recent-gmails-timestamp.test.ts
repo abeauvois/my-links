@@ -11,24 +11,29 @@ import { FileTimestampRepository } from '../../repositories/FileTimestampReposit
  */
 
 describe('FileTimestampRepository', () => {
-    let fileTimestampRepo: FileTimestampRepository;
+    test('should throw error when no timestamp file exists and no default provided', async () => {
+        // Arrange: Create repository with non-existent file and no default
+        const fileTimestampRepo = new FileTimestampRepository('.test-nonexistent-file-12345');
 
-    beforeEach(() => {
-        // Reset mocks before each test
-        fileTimestampRepo = new FileTimestampRepository();
+        // Act & Assert: Should throw error when timestamp file doesn't exist
+        await expect(fileTimestampRepo.getLastExecutionTime()).rejects.toThrow(
+            'Timestamp file not found'
+        );
+
+        console.log('✅ Correctly throws error when timestamp file not found');
     });
 
-    test('should return 30 days ago date (no previous timestamp)', async () => {
+    test('should return default timestamp when no file exists but default is provided', async () => {
+        // Arrange: Create repository with default timestamp
+        const defaultTimestamp = new Date('2024-01-01');
+        const repoWithDefault = new FileTimestampRepository('.test-nonexistent', defaultTimestamp);
 
-        // Act: Execute use case
-        const result = await fileTimestampRepo.getLastExecutionTime();
+        // Act
+        const result = await repoWithDefault.getLastExecutionTime();
 
-        const defaultDate = result || new Date(new Date().getTime() - 1000 * 60 * 60 * 24 * 30);
-        console.log("🚀 ~ defaultDate:", defaultDate)
-
-        // Assert: Should return all messages since no previous timestamp exists
-        expect(result).toBeNull();
-        expect(defaultDate).toBeInstanceOf(Date);
+        // Assert: Should return the default timestamp
+        expect(result).toEqual(defaultTimestamp);
+        console.log('✅ Returns default timestamp when file not found');
     });
 
 });
