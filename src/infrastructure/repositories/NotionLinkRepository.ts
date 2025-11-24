@@ -49,17 +49,16 @@ export class NotionLinkRepository implements ILinkRepository {
             }
 
             // Get tag from multi_select
-            let tag = '';
+            let tags: string[] = [];
             if ('Tag' in properties && properties.Tag.type === 'multi_select') {
-                const tags = properties.Tag.multi_select;
-                tag = tags.length > 0 ? tags[0].name : '';
+                tags = properties.Tag.multi_select.map(t => t.name);
             }
 
             // Get description from rich_text
-            let description = '';
+            let summary = '';
             if ('Description' in properties && properties.Description.type === 'rich_text') {
                 const richText = properties.Description.rich_text;
-                description = richText.map(t => t.plain_text).join('');
+                summary = richText.map(t => t.plain_text).join('');
             }
 
             // Get timestamps
@@ -73,7 +72,7 @@ export class NotionLinkRepository implements ILinkRepository {
                 updatedAt = new Date(properties.UpdatedAt.date.start);
             }
 
-            return new Bookmark(urlValue, tag, description, '', createdAt, updatedAt);
+            return new Bookmark(urlValue, "NotionDatabase", tags, summary, '', createdAt, updatedAt);
         } catch (error) {
             console.error(`Error finding link by URL: ${error instanceof Error ? error.message : error}`);
             return null;
@@ -127,16 +126,15 @@ export class NotionLinkRepository implements ILinkRepository {
                     }
 
                     // Extract tag
-                    let tag = '';
+                    let tags: string[] = [];
                     if ('Tag' in properties && properties.Tag.type === 'multi_select') {
-                        const tags = properties.Tag.multi_select;
-                        tag = tags.length > 0 ? tags[0].name : '';
+                        tags = properties.Tag.multi_select.map((t: any) => t.name);
                     }
 
                     // Extract description
-                    let description = '';
+                    let summary = '';
                     if ('Description' in properties && properties.Description.type === 'rich_text') {
-                        description = properties.Description.rich_text.map((t: any) => t.plain_text).join('');
+                        summary = properties.Description.rich_text.map((t: any) => t.plain_text).join('');
                     }
 
                     // Get timestamps
@@ -151,7 +149,7 @@ export class NotionLinkRepository implements ILinkRepository {
                     }
 
                     if (url) {
-                        links.push(new Bookmark(url, tag, description, '', createdAt, updatedAt));
+                        links.push(new Bookmark(url, "NotionDatabase", tags, summary, '', createdAt, updatedAt));
                     }
                 }
 
@@ -225,13 +223,13 @@ export class NotionLinkRepository implements ILinkRepository {
                     ],
                 },
                 'Tag': {
-                    multi_select: link.tag ? [{ name: link.tag }] : [],
+                    multi_select: link.tags ? link.tags.map(name => ({ name })) : [],
                 },
                 'Description': {
                     rich_text: [
                         {
                             text: {
-                                content: link.description || '',
+                                content: link.summary || '',
                             },
                         },
                     ],
@@ -258,13 +256,13 @@ export class NotionLinkRepository implements ILinkRepository {
             page_id: pageId,
             properties: {
                 'Tag': {
-                    multi_select: link.tag ? [{ name: link.tag }] : [],
+                    multi_select: link.tags ? link.tags.map(name => ({ name })) : [],
                 },
                 'Description': {
                     rich_text: [
                         {
                             text: {
-                                content: link.description || '',
+                                content: link.summary || '',
                             },
                         },
                     ],

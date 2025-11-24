@@ -1,7 +1,6 @@
 import { UnstructuredDataSource } from '../../domain/entities/UnstructuredDataSource.js';
 import { BaseContent } from '../../domain/entities/BaseContent.js';
 import { EmailFile } from '../../domain/entities/EmailFile.js';
-import { SourceAdapter } from '../../domain/entities/SourceAdapter.js';
 import { FileIngestionConfig, IngestionConfig } from '../../domain/entities/IngestionConfig.js';
 import { IDirectoryReader } from '../../domain/ports/IDirectoryReader.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
