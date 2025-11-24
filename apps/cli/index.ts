@@ -4,17 +4,19 @@ import { cli } from 'cleye';
 import { notionCommand } from './commands/notion.js';
 import { personalCommand } from './commands/personal.js';
 
+console.log('🔍 DEBUG: Script is executing');
+
 /**
  * CLI Entry Point: Email Link Extractor
  * Unified CLI instance using Cleye's command pattern
  */
 
 cli({
-  name: 'email-link-extractor',
-  version: '1.0.0',
+  name: 'platform-cli',
+  version: '0.0.2',
 
   parameters: [
-    '<input-path>',  // Required input path for default extract
+    '[input-path]',  // Optional input path for default extract
     '[output-csv]'   // Optional output CSV
   ],
 
@@ -74,13 +76,16 @@ Architecture:
   }
 }, async (argv) => {
   // Default extract command handler
+  console.log('🔍 DEBUG: Root handler called');
+  console.log('🔍 DEBUG: argv =', JSON.stringify(argv, null, 2));
+
   try {
     const inputPath = argv._.inputPath;
     const outputCsvPath = argv._.outputCsv || 'output.csv';
     const verbose = argv.flags.verbose;
 
     if (!inputPath) {
-      console.error('❌ Error: input-path is required');
+      console.error('❌ Error: input-path is required for extract command');
       console.error('\nUsage: bun run src/cli/index.ts <input-path> [output-csv]\n');
       process.exit(1);
     }

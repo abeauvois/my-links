@@ -1,5 +1,6 @@
-import { command } from 'cleye';
+import { command, cli } from 'cleye';
 import { bookmarkCommand } from './bookmark.js';
+import { ingestCommand } from './ingest.js';
 
 /**
  * Personal command - Personal data management
@@ -15,4 +16,33 @@ export const personalCommand = command({
     commands: [
         bookmarkCommand
     ],
+}, (argv) => {
+    // Workaround: Cleye seems to have issues with deep nested commands matching.
+    // If we land here, it means subcommands were not matched automatically.
+    // We manually check for 'bookmark' subcommand and dispatch to a new CLI instance.
+
+    if (argv._[0] === 'bookmark') {
+        // If ingest is the next command, dispatch directly to ingest
+        if (argv._[1] === 'ingest') {
+            // Find where 'bookmark' is in process.argv to slice correctly
+            const bookmarkIndex = process.argv.indexOf('bookmark');
+            if (bookmarkIndex !== -1) {
+                const args = process.argv.slice(bookmarkIndex + 1); // ['ingest', ...]
+
+                cli({
+                    commands: [ingestCommand]
+                }, undefined, args);
+                return;
+            }
+        }
+
+        // Fallback for just 'bookmark' or other subcommands
+        const personalIndex = process.argv.indexOf('personal');
+        if (personalIndex !== -1) {
+            const args = process.argv.slice(personalIndex + 1); // ['bookmark', ...]
+            cli({
+                commands: [bookmarkCommand]
+            }, undefined, args);
+        }
+    }
 });

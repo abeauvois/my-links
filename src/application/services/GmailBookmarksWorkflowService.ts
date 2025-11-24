@@ -45,7 +45,7 @@ export class GmailBookmarksWorkflowService {
                 this.logger.info('📧 Fetching recent Gmail messages...');
             },
             onError: async (error: Error, item: GmailMessage) => {
-                this.logger.warning(`  ⚠️  Error processing message "${item.subject}": ${error.message}`);
+                this.logger.warning(`  ⚠️  Error processing message "${JSON.stringify(item, null, 2)}": ${error.message}`);
             },
             onComplete: async (stats) => {
                 this.logger.info(`✅ Found ${stats.itemsProduced} new message${stats.itemsProduced === 1 ? '' : 's'}`);

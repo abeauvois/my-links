@@ -1,4 +1,4 @@
-import { google } from 'googleapis';
+import { google, gmail_v1 } from 'googleapis';
 import { IEmailClient } from '../../domain/ports/IEmailClient.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
 import { GmailMessage } from '../../domain/entities/GmailMessage.js';
@@ -16,7 +16,7 @@ import { GmailMessage } from '../../domain/entities/GmailMessage.js';
  */
 
 export class GmailClient implements IEmailClient {
-    private gmail: any;
+    private gmail: InstanceType<typeof gmail_v1.Gmail>;
 
     constructor(
         private readonly clientId: string,
@@ -24,10 +24,10 @@ export class GmailClient implements IEmailClient {
         private readonly refreshToken: string,
         private readonly logger: ILogger
     ) {
-        this.initializeGmailClient();
+        this.gmail = this.initializeGmailClient();
     }
 
-    private initializeGmailClient(): void {
+    private initializeGmailClient(): InstanceType<typeof gmail_v1.Gmail> {
         const oauth2Client = new google.auth.OAuth2(
             this.clientId,
             this.clientSecret,
@@ -38,7 +38,7 @@ export class GmailClient implements IEmailClient {
             refresh_token: this.refreshToken,
         });
 
-        this.gmail = google.gmail({ version: 'v1', auth: oauth2Client });
+        return google.gmail({ version: 'v1', auth: oauth2Client });
     }
 
     async fetchMessagesSince(since: Date, filterEmail?: string): Promise<GmailMessage[]> {
@@ -69,6 +69,8 @@ export class GmailClient implements IEmailClient {
             const gmailMessages: GmailMessage[] = [];
 
             for (const message of messages) {
+                if (!message.id) continue;
+
                 try {
                     const fullMessage = await this.gmail.users.messages.get({
                         userId: 'me',
@@ -107,9 +109,10 @@ export class GmailClient implements IEmailClient {
         return query;
     }
 
-    private parseGmailMessage(messageData: any): GmailMessage | null {
+    private parseGmailMessage(messageData: gmail_v1.Schema$Message): GmailMessage | null {
         try {
             const headers = messageData.payload?.headers || [];
+            const parts = messageData.payload?.parts || [];
 
             // Extract headers
             const subject =
@@ -123,13 +126,19 @@ export class GmailClient implements IEmailClient {
                 receivedAt = new Date(dateHeader);
             } else {
                 // Fallback to internal date (timestamp in milliseconds)
-                receivedAt = new Date(parseInt(messageData.internalDate));
+                const fallbackMs = Date.now() - 7 * 24 * 60 * 60 * 1000; // 7 days ago
+                const internalDateMs = messageData.internalDate ? parseInt(messageData.internalDate, 10) : fallbackMs;
+                receivedAt = new Date(Number.isNaN(internalDateMs) ? fallbackMs : internalDateMs);
             }
 
             // Extract snippet (preview text)
             const snippet = messageData.snippet || '';
 
-            const content = messageData.payload.parts.map((part: any) => GmailClient.decodeBase64(part.body.data || '')).join('')
+            const content = parts.map((part: any) => GmailClient.decodeBase64(part.body.data || '')).join('')
+
+            if (!messageData.id) {
+                return null;
+            }
 
             return new GmailMessage(messageData.id, subject, from, receivedAt, snippet, content);
         } catch (error) {
@@ -161,4 +170,3 @@ export class GmailClient implements IEmailClient {
         }
     }
 }
-

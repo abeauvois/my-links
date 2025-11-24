@@ -135,10 +135,10 @@ describe('E2E: CLI Personal Bookmark Ingest', () => {
         // Verify CSV has records (if any messages were found)
         if (records.length > 0) {
             // Verify first record has expected columns
-            const firstRecord = records[0] as BaseContent
+            const firstRecord = records[0] as any; // Using any to check raw CSV columns
             expect(firstRecord).toHaveProperty('url');
-            expect(firstRecord).toHaveProperty('tag');
-            expect(firstRecord).toHaveProperty('description');
+            expect(firstRecord).toHaveProperty('tags');
+            expect(firstRecord).toHaveProperty('summary');
 
             expect(firstRecord.url).toBeTruthy();
             expect(typeof firstRecord.url).toBe('string');
@@ -146,7 +146,7 @@ describe('E2E: CLI Personal Bookmark Ingest', () => {
 
             console.log('✅ CSV structure validated');
             console.log(`   Sample URL: ${firstRecord.url}`);
-            console.log(`   Sample tag: ${firstRecord.tags || [].join(', ')}`);
+            console.log(`   Sample tags: ${firstRecord.tags}`);
         } else {
             console.log('ℹ️  CSV is empty - no bookmarks found in time range');
         }
