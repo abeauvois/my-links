@@ -380,7 +380,7 @@ bun run test:e2e                      # End-to-end tests
 bun run build                         # Build workspace packages
 ```
 
-## 📖 Documentation Reference
+## 📖 Documentation Reference from ./docs/ai
 
 - `TDD.md` - Comprehensive TDD guide with examples
 - `TESTING_GUIDE.md` - Testing strategies and patterns
