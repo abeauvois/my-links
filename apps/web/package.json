@@ -1,5 +1,5 @@
 {
-  "name": "test-hono-rpc-better-auth",
+  "name": "web",
   "scripts": {
     "client": "cd client && bun run dev",
     "server": "bun --bun run --hot server/index.ts",
