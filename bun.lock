@@ -23,6 +23,7 @@
       "dependencies": {
         "@hono/zod-validator": "^0.7.2",
         "@neondatabase/serverless": "^1.0.1",
+        "@platform/domain": "workspace:*",
         "better-auth": "^1.3.4",
         "drizzle-orm": "^0.44.4",
         "hono": "^4.8.12",
@@ -44,6 +45,13 @@
       "version": "1.0.0",
       "devDependencies": {
         "@types/bun": "latest",
+        "typescript": "^5.0.0",
+      },
+    },
+    "packages/domain": {
+      "name": "@platform/domain",
+      "version": "1.0.0",
+      "devDependencies": {
         "typescript": "^5.0.0",
       },
     },
@@ -138,6 +146,8 @@
     "@notionhq/client": ["@notionhq/client@5.4.0", "", {}, "sha512-SJsprS26S0Wi9CoTQp4vC8/nPpAIo1gMB4H7aJ2E/k0fWnNGIEAg984KwtzK6h9ZGaPcEaryVRSz1VVClJcVUw=="],
 
     "@pkgjs/parseargs": ["@pkgjs/parseargs@0.11.0", "", {}, "sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg=="],
+
+    "@platform/domain": ["@platform/domain@workspace:packages/domain"],
 
     "@poppinss/cliui": ["@poppinss/cliui@6.5.0", "", { "dependencies": { "@poppinss/colors": "^4.1.5", "cli-boxes": "^4.0.1", "cli-table3": "^0.6.5", "cli-truncate": "^5.1.0", "log-update": "^7.0.1", "pretty-hrtime": "^1.0.3", "string-width": "^8.1.0", "supports-color": "^10.2.2", "terminal-size": "^4.0.0", "wordwrap": "^1.0.0" } }, "sha512-Z1eJxk0k/JZvTjeL8RZ/K8SFfB7RIajoAzBFeOFBzJ8zM0sm9u7gWZS/q+8GChozcV20WdJNwSPrbq/BToJl0w=="],
 

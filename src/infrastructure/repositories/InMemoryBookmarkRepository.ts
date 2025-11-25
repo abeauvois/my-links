@@ -2,10 +2,10 @@ import { Bookmark } from '../../domain/entities/Bookmark.js';
 import { ILinkRepository } from '../../domain/ports/ILinkRepository.js';
 
 /**
- * In-Memory Implementation of ILinkRepository
+ * In-Memory Implementation of ILinkRepository for Bookmark entities
  * Useful for testing and development without external dependencies
  */
-export class InMemoryLinkRepository implements ILinkRepository {
+export class InMemoryBookmarkRepository implements ILinkRepository {
     private links: Map<string, Bookmark> = new Map();
 
     async exists(url: string): Promise<boolean> {

@@ -1,0 +1,21 @@
+{
+    "name": "@platform/domain",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Shared domain layer (entities, ports, workflow) for the email links monorepo",
+    "type": "module",
+    "main": "dist/packages/domain/src/index.js",
+    "types": "dist/packages/domain/src/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/packages/domain/src/index.d.ts",
+            "import": "./dist/packages/domain/src/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "devDependencies": {
+        "typescript": "^5.0.0"
+    }
+}

@@ -9,7 +9,9 @@
   ],
   "scripts": {
     "build": "bun run build:lib",
-    "build:lib": "cd packages/cached-http-client && bun run build",
+    "build:lib": "bun run build:cached-http && bun run build:domain",
+    "build:cached-http": "cd packages/cached-http-client && bun run build",
+    "build:domain": "cd packages/domain && bun run build",
     "cli": "bun run src/cli/index.ts",
     "cli:help": "bun run src/cli/index.ts --help",
     "cli:version": "bun run src/cli/index.ts --version",
