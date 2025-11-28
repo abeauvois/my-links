@@ -1,1 +1,0 @@
-ALTER TABLE "todos" ADD COLUMN "subtitle" varchar(500);

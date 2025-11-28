@@ -7,19 +7,9 @@ import {
   text,
 } from 'drizzle-orm/pg-core';
 
-export const todos = pgTable('todos', {
-  id: uuid().primaryKey().defaultRandom(),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  title: varchar({ length: 500 }).notNull(),
-  subtitle: varchar({ length: 500 }),
-  description: varchar({ length: 1000 }),
-  completed: boolean().default(false),
-  createdAt: timestamp({ withTimezone: true }).defaultNow(),
-  updatedAt: timestamp({ withTimezone: true }).defaultNow(),
-});
-
+// Authentication tables reference - DO NOT MIGRATE
+// These tables are managed by packages/platform-db and must already exist
+// The definitions here are only for TypeScript types and foreign key references
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
@@ -78,4 +68,18 @@ export const verification = pgTable('verification', {
   updatedAt: timestamp('updated_at').$defaultFn(
     () => /* @__PURE__ */ new Date()
   ),
+});
+
+// Web app specific tables - THESE WILL BE MIGRATED
+export const todos = pgTable('todos', {
+  id: uuid().primaryKey().defaultRandom(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  title: varchar({ length: 500 }).notNull(),
+  subtitle: varchar({ length: 500 }),
+  description: varchar({ length: 1000 }),
+  completed: boolean().default(false),
+  createdAt: timestamp({ withTimezone: true }).defaultNow(),
+  updatedAt: timestamp({ withTimezone: true }).defaultNow(),
 });

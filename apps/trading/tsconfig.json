@@ -5,9 +5,16 @@
     "jsxImportSource": "hono/jsx",
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
+    "target": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["bun-types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./server/*"]
+      "@/*": ["./server/*"],
+      "@platform/auth": ["../../packages/platform-auth/src/index.ts"],
+      "@platform/domain": ["../../packages/domain/src/index.ts"],
+      "@platform/trading-domain": ["../../packages/trading-domain/src/index.ts"]
     }
   }
 }

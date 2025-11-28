@@ -16,10 +16,11 @@
     "docker:run": "docker run -p 3000:3000 --env-file .env -e DATABASE_URL='postgresql://user:password@host.docker.internal:5432/todos' hono-todo-app"
   },
   "dependencies": {
+    "@platform/auth": "workspace:*",
+    "@platform/db": "workspace:*",
     "@platform/domain": "workspace:*",
     "@hono/zod-validator": "^0.7.2",
     "@neondatabase/serverless": "^1.0.1",
-    "better-auth": "^1.3.4",
     "drizzle-orm": "^0.44.4",
     "hono": "^4.8.12",
     "pg": "^8.16.3",
