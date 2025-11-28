@@ -230,6 +230,39 @@ export class TradingApiClient extends PlatformApiClient {
     // ============================================
 
     /**
+     * Get ticker data
+     * Does not require authentication
+     */
+    async getTicker(): Promise<MarketTicker> {
+        try {
+            this.logger.info('Fetching ticker...');
+
+            const response = await fetch(
+                `${this.baseUrl}/ticker`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch ticker: ${response.statusText}`);
+            }
+
+            const ticker = await response.json() as MarketTicker;
+            this.logger.info('Ticker fetched successfully');
+            return ticker;
+
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            this.logger.error(`Error fetching ticker: ${errorMessage}`);
+            throw error;
+        }
+    }
+
+    /**
      * Get market ticker for a symbol
      * Does not require authentication
      */
