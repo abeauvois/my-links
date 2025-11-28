@@ -6,16 +6,17 @@
 // API Client
 export { TradingApiClient } from './TradingApiClient.js';
 
-// Types
+// Re-export domain types for convenience
 export type {
     Position,
     Order,
     CreateOrderData,
     MarketTicker,
+    MarketTickerResponse,
     AccountBalance,
     Portfolio,
     Trade,
-} from './types.js';
+} from '@platform/trading-domain';
 
 // Re-export auth types from platform SDK for convenience
 export type {

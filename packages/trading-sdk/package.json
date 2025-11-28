@@ -19,6 +19,7 @@
     },
     "dependencies": {
         "@platform/domain": "workspace:*",
+        "@platform/trading-domain": "workspace:*",
         "@platform/sdk": "workspace:*"
     },
     "devDependencies": {

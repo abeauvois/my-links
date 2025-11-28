@@ -5,7 +5,6 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022"],
     "outDir": "./dist",
-    "rootDir": "./src",
     "declaration": true,
     "declarationMap": true,
     "esModuleInterop": true,
@@ -14,7 +13,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "allowSyntheticDefaultImports": true,
-    "types": ["bun-types"]
+    "types": ["bun-types"],
+    "paths": {
+      "@platform/domain": ["../domain/src"],
+      "@platform/trading-domain": ["../trading-domain/src"],
+      "@platform/sdk": ["../platform-sdk/src"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "tests"]

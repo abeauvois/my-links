@@ -1,6 +1,6 @@
 /**
- * Trading SDK Types
- * Request and response types for trading operations
+ * Trading Domain Types
+ * Core domain types for trading operations
  */
 
 /**
@@ -49,7 +49,24 @@ export interface CreateOrderData {
 }
 
 /**
- * Market data/ticker information
+ * Market data/ticker information (raw API response)
+ * Timestamps come as strings from JSON and need conversion to Date
+ */
+export interface MarketTickerResponse {
+    symbol: string;
+    lastPrice: number;
+    bidPrice: number;
+    askPrice: number;
+    volume24h: number;
+    high24h: number;
+    low24h: number;
+    priceChange24h: number;
+    priceChangePercent24h: number;
+    timestamp: string;
+}
+
+/**
+ * Market data/ticker information (domain model)
  */
 export interface MarketTicker {
     symbol: string;

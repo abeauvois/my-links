@@ -10,12 +10,17 @@ describe('TradingApiClient - getTicker', () => {
         mockLogger = {
             info: mock(() => { }),
             error: mock(() => { }),
-            warn: mock(() => { }),
+            warning: mock(() => { }),
             debug: mock(() => { }),
+            await: mock(() => ({
+                start: mock(() => { }),
+                update: mock(() => { }),
+                stop: mock(() => { }),
+            })),
         };
 
         client = new TradingApiClient({
-            baseUrl: 'http://localhost:3000',
+            baseUrl: 'http://localhost:3001',
             logger: mockLogger,
         });
     });
@@ -35,6 +40,7 @@ describe('TradingApiClient - getTicker', () => {
             timestamp: new Date('2024-01-01T12:00:00Z'),
         };
 
+        // @ts-ignore
         global.fetch = mock(() =>
             Promise.resolve({
                 ok: true,
@@ -52,7 +58,7 @@ describe('TradingApiClient - getTicker', () => {
 
         // Verify fetch was called with correct endpoint
         expect(global.fetch).toHaveBeenCalledWith(
-            'http://localhost:3000/ticker',
+            'http://localhost:3001/api/trading/ticker',
             expect.objectContaining({
                 method: 'GET',
                 headers: {
@@ -64,6 +70,7 @@ describe('TradingApiClient - getTicker', () => {
 
     test('should handle fetch errors gracefully', async () => {
         // Arrange: Mock fetch to fail
+        // @ts-ignore
         global.fetch = mock(() =>
             Promise.resolve({
                 ok: false,
@@ -80,6 +87,7 @@ describe('TradingApiClient - getTicker', () => {
 
     test('should handle network errors', async () => {
         // Arrange: Mock fetch to throw network error
+        // @ts-ignore
         global.fetch = mock(() => Promise.reject(new Error('Network error')));
 
         // Act & Assert: Expect error to be thrown

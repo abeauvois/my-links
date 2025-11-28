@@ -5,9 +5,10 @@ import type {
     Order,
     CreateOrderData,
     MarketTicker,
+    MarketTickerResponse,
     Portfolio,
     Trade,
-} from './types.js';
+} from '@platform/trading-domain';
 
 interface TradingApiClientConfig {
     baseUrl: string;
@@ -23,6 +24,15 @@ interface TradingApiClientConfig {
 export class TradingApiClient extends PlatformApiClient {
     constructor(config: TradingApiClientConfig) {
         super(config);
+    }
+
+    /**
+     * Helper method to parse JSON response with proper typing
+     * Encapsulates the type assertion in a single location
+     */
+    private async parseJsonResponse<T>(response: Response): Promise<T> {
+        const data = await response.json();
+        return data as T;
     }
 
     // ============================================
@@ -238,7 +248,7 @@ export class TradingApiClient extends PlatformApiClient {
             this.logger.info('Fetching ticker...');
 
             const response = await fetch(
-                `${this.baseUrl}/ticker`,
+                `${this.baseUrl}/api/trading/ticker`,
                 {
                     method: 'GET',
                     headers: {
@@ -251,9 +261,9 @@ export class TradingApiClient extends PlatformApiClient {
                 throw new Error(`Failed to fetch ticker: ${response.statusText}`);
             }
 
-            const ticker = await response.json() as MarketTicker;
+            const tickerResponse = await this.parseJsonResponse<MarketTickerResponse>(response);
             this.logger.info('Ticker fetched successfully');
-            return ticker;
+            return { ...tickerResponse, timestamp: new Date(tickerResponse.timestamp) };
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -284,9 +294,9 @@ export class TradingApiClient extends PlatformApiClient {
                 throw new Error(`Failed to fetch ticker: ${response.statusText}`);
             }
 
-            const ticker = await response.json() as MarketTicker;
+            const tickerResponse = await this.parseJsonResponse<MarketTickerResponse>(response);
             this.logger.info('Market ticker fetched successfully');
-            return ticker;
+            return { ...tickerResponse, timestamp: new Date(tickerResponse.timestamp) };
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -321,9 +331,12 @@ export class TradingApiClient extends PlatformApiClient {
                 throw new Error(`Failed to fetch tickers: ${response.statusText}`);
             }
 
-            const tickers = await response.json() as MarketTicker[];
-            this.logger.info(`Fetched ${tickers.length} market tickers`);
-            return tickers;
+            const tickersResponse = await this.parseJsonResponse<MarketTickerResponse[]>(response);
+            this.logger.info(`Fetched ${tickersResponse.length} market tickers`);
+            return tickersResponse.map(ticker => ({
+                ...ticker,
+                timestamp: new Date(ticker.timestamp)
+            }));
 
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';

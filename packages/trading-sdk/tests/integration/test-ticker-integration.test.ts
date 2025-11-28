@@ -5,7 +5,7 @@ import type { ILogger } from '@platform/domain';
 /**
  * Integration Test for getTicker
  * 
- * IMPORTANT: This test requires the trading server to be running on localhost:3000
+ * IMPORTANT: This test requires the trading server to be running on localhost:3001
  * 
  * To run this test:
  * 1. Start the server: cd apps/trading && bun run server
@@ -30,7 +30,7 @@ describe('Trading API - getTicker Integration', () => {
 
         // Initialize client pointing to local server
         client = new TradingApiClient({
-            baseUrl: 'http://localhost:3000',
+            baseUrl: 'http://localhost:3001',
             logger: mockLogger,
         });
     });

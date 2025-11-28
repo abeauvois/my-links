@@ -18,7 +18,7 @@ export const ticker = new Hono<HonoEnv>()
                 timestamp: new Date(),
             };
 
-            return c.json(ticker);
+            return c.json(ticker)
         } catch (error) {
             console.error('Failed to fetch ticker: ', error);
             return c.json({ error: 'Failed to fetch ticker' }, 500);
