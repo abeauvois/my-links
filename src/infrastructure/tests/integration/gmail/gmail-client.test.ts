@@ -1,7 +1,7 @@
 import { test, expect, describe } from 'bun:test';
-import { GoogleGmailClient } from '../../../adapters/GoogleGmailClient.js';
+import { GmailClient } from '../../../adapters/GmailClient.js';
 import { CliuiLogger } from '../../../adapters/CliuiLogger.js';
-import { EnvConfig } from '../../../config/EnvConfig.js';
+import { EnvConfigProvider } from '@platform/sdk';
 
 /**
  * Integration Test: Gmail Credentials & API Connection
@@ -17,16 +17,18 @@ import { EnvConfig } from '../../../config/EnvConfig.js';
  * This test will be skipped if credentials are not configured.
  */
 
+const envPath = './apps/api/.env'
+
 describe('Gmail API Integration', () => {
     test('should authenticate and fetch messages with valid credentials', async () => {
         // Load credentials from .env
-        const config = new EnvConfig();
-        await config.load();
+        const config = new EnvConfigProvider();
+        await config.load(envPath);
 
-        const clientId = config.get('GMAIL_CLIENT_ID');
-        const clientSecret = config.get('GMAIL_CLIENT_SECRET');
-        const refreshToken = config.get('GMAIL_REFRESH_TOKEN');
-        const filterEmail = config.get('MY_EMAIL_ADDRESS');
+        const clientId = config.getOptional('GMAIL_CLIENT_ID');
+        const clientSecret = config.getOptional('GMAIL_CLIENT_SECRET');
+        const refreshToken = config.getOptional('GMAIL_REFRESH_TOKEN');
+        const filterEmail = config.getOptional('MY_EMAIL_ADDRESS');
 
         // Skip test if credentials are not configured
         if (!clientId || !clientSecret || !refreshToken) {
@@ -49,7 +51,7 @@ describe('Gmail API Integration', () => {
 
         // Initialize Gmail client with real credentials
         const logger = new CliuiLogger();
-        const gmailClient = new GoogleGmailClient(clientId, clientSecret, refreshToken, logger);
+        const gmailClient = new GmailClient(clientId, clientSecret, refreshToken, logger);
 
         // Test: Fetch messages from last 7 days
         const sevenDaysAgo = new Date();
@@ -122,7 +124,7 @@ describe('Gmail API Integration', () => {
         const logger = new CliuiLogger();
 
         // Create client with invalid credentials
-        const invalidClient = new GoogleGmailClient(
+        const invalidClient = new GmailClient(
             'invalid_client_id',
             'invalid_client_secret',
             'invalid_refresh_token',

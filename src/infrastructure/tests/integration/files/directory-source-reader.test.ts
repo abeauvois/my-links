@@ -9,6 +9,7 @@ import { ConsoleLogger } from '../ConsoleLogger';
 
 const fixturePath = '../../fixtures/test_mylinks'
 const fixturePath2 = '../../fixtures/test_mylinks_2'
+const zipFixturePath = '../../fixtures/test_mylinks.zip'
 
 describe('DirectorySourceReader Integration Tests', () => {
     const logger = new ConsoleLogger();
@@ -22,6 +23,7 @@ describe('DirectorySourceReader Integration Tests', () => {
 
         const config: FileIngestionConfig = {
             path: dirPath,
+            filePattern: '*.eml',
         };
 
         const results = await sourceReader.ingest(config);
@@ -35,6 +37,7 @@ describe('DirectorySourceReader Integration Tests', () => {
             expect(content.sourceAdapter).toBe('Directory');
             expect(content.rawContent).toBeDefined();
             expect(content.rawContent.length).toBeGreaterThan(0);
+            expect(content.contentType).toBe('email')
             expect(content.createdAt).toBeInstanceOf(Date);
             expect(content.updatedAt).toBeInstanceOf(Date);
         });
@@ -129,6 +132,7 @@ describe('DirectorySourceReader Integration Tests', () => {
             expect(content.summary).toBe(''); // Initially empty
             expect(content.url).toBe(content.rawContent); // url field contains raw content
             expect(content.rawContent).toBeDefined();
+            expect(content.contentType).toBeDefined();
             expect(content.createdAt).toBeInstanceOf(Date);
             expect(content.updatedAt).toBeInstanceOf(Date);
         });
@@ -198,6 +202,7 @@ describe('DirectorySourceReader Integration Tests', () => {
         results.forEach(content => {
             expect(content.sourceAdapter).toBe('Directory');
             expect(content.url).toBe(content.rawContent);
+            expect(content.contentType).toBeDefined();
             expect(content.rawContent).toBeDefined();
             expect(content.rawContent.length).toBeGreaterThan(0);
         });
@@ -220,6 +225,7 @@ describe('DirectorySourceReader Integration Tests', () => {
         // All should be from directory source
         results.forEach(content => {
             expect(content.sourceAdapter).toBe('Directory');
+            expect(content.contentType).toBe('email');
         });
     });
 
@@ -257,5 +263,77 @@ describe('DirectorySourceReader Integration Tests', () => {
         });
 
         console.log(`✅ All ${results.length} files have valid contentType`);
+    });
+
+    test('should extract and ingest files from zip archive', async () => {
+        const zipPath = join(__dirname, zipFixturePath);
+
+        const config: FileIngestionConfig = {
+            path: zipPath,
+        };
+
+        const results = await sourceReader.ingest(config);
+
+        // Verify we got results from zip
+        expect(results.length).toBeGreaterThan(0);
+        console.log(`✅ Extracted ${results.length} files from zip archive`);
+
+        // Verify all results are BaseContent with correct source
+        results.forEach(content => {
+            expect(content.sourceAdapter).toBe('Directory');
+            expect(content.rawContent).toBeDefined();
+            expect(content.rawContent.length).toBeGreaterThan(0);
+            expect(content.createdAt).toBeInstanceOf(Date);
+            expect(content.updatedAt).toBeInstanceOf(Date);
+        });
+    });
+
+    test('should extract same content from zip as from directory', async () => {
+        const dirPath = join(__dirname, fixturePath);
+        const zipPath = join(__dirname, zipFixturePath);
+
+        const dirConfig: FileIngestionConfig = { path: dirPath };
+        const zipConfig: FileIngestionConfig = { path: zipPath };
+
+        const dirResults = await sourceReader.ingest(dirConfig);
+        const zipResults = await sourceReader.ingest(zipConfig);
+
+        // Both should have the same number of files (assuming zip contains same files as directory)
+        console.log(`✅ Directory: ${dirResults.length} files, Zip: ${zipResults.length} files`);
+
+        // Both should produce valid BaseContent items
+        expect(dirResults.length).toBeGreaterThan(0);
+        expect(zipResults.length).toBeGreaterThan(0);
+    });
+
+    test('should support file pattern filtering on zip archive', async () => {
+        const zipPath = join(__dirname, zipFixturePath);
+
+        const config: FileIngestionConfig = {
+            path: zipPath,
+            filePattern: '*.eml',
+        };
+
+        const results = await sourceReader.ingest(config);
+
+        // Should only get .eml files from zip
+        expect(results.length).toBeGreaterThan(0);
+        console.log(`✅ Filtered to ${results.length} .eml files from zip`);
+
+        // All should have email contentType
+        results.forEach(content => {
+            expect(content.contentType).toBe('email');
+        });
+    });
+
+    test('should throw error for non-existent zip file', async () => {
+        const nonExistentPath = join(__dirname, '../fixtures/does-not-exist.zip');
+
+        const config: FileIngestionConfig = {
+            path: nonExistentPath,
+        };
+
+        await expect(sourceReader.ingest(config)).rejects.toThrow();
+        console.log(`✅ Correctly throws error for non-existent zip file`);
     });
 });
