@@ -1,10 +1,9 @@
 import { LinkExtractionFactory } from '../../../src/infrastructure/factories/LinkExtractionFactory.js';
-import { WorkflowPresetName } from '../../../src/application/workflows/index.js';
 import { loadConfig, createLogger } from '../lib/ConfigLoader';
 
 export interface ExtractCommandOptions {
     verbose?: boolean;
-    preset?: WorkflowPresetName;
+    preset?: WorkflowPreset;
     skipAnalysis?: boolean;
     skipTwitter?: boolean;
     csvOnly?: boolean;

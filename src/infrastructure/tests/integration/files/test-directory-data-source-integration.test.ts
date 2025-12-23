@@ -1,9 +1,12 @@
 import { test, expect, describe } from 'bun:test';
 import { join } from 'node:path';
-import { DirectorySourceReader } from '../../../application/source-readers/DirectorySourceReader';
-import { DirectoryReader } from '../../adapters/DirectoryReader';
-import { FileIngestionConfig } from '../../../domain/entities/IngestionConfig';
-import { ConsoleLogger } from './ConsoleLogger';
+import { DirectorySourceReader } from '../../../../application/source-readers/DirectorySourceReader';
+import { DirectoryReader } from '../../../adapters/DirectoryReader';
+import { FileIngestionConfig } from '../../../../domain/entities/IngestionConfig';
+import { ConsoleLogger } from '../ConsoleLogger';
+
+const fixturePath = '../../fixtures/test_mylinks'
+const fixturePath2 = '../../fixtures/test_mylinks_2'
 
 describe('DirectorySourceReader Integration Tests', () => {
     const logger = new ConsoleLogger();
@@ -11,7 +14,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     const sourceReader = new DirectorySourceReader(directoryReader, logger);
 
     test('should ingest real directory with email files', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks');
+        const dirPath = join(__dirname, fixturePath);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -34,7 +37,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should extract content from all files in directory', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks');
+        const dirPath = join(__dirname, fixturePath);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -52,7 +55,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should handle smaller test directory', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -72,7 +75,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should set correct timestamps on ingested content', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -106,7 +109,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should normalize content consistently across all files', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -130,7 +133,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should handle directory with email files', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks');
+        const dirPath = join(__dirname, fixturePath);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -150,7 +153,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should preserve file content integrity', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -170,7 +173,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should handle each file as separate BaseContent item', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -197,7 +200,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should support file pattern filtering', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks');
+        const dirPath = join(__dirname, fixturePath);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -217,7 +220,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should infer contentType for email files', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks');
+        const dirPath = join(__dirname, fixturePath);
 
         const config: FileIngestionConfig = {
             path: dirPath,
@@ -236,7 +239,7 @@ describe('DirectorySourceReader Integration Tests', () => {
     });
 
     test('should set contentType based on file extension', async () => {
-        const dirPath = join(__dirname, '../fixtures/test_mylinks_2');
+        const dirPath = join(__dirname, fixturePath2);
 
         const config: FileIngestionConfig = {
             path: dirPath,
