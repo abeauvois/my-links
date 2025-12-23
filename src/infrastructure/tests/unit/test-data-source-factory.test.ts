@@ -62,14 +62,20 @@ describe('SourceReaderFactory', () => {
         });
 
         test('should create DirectorySourceReader for ZipFile source type', () => {
-            const mockDirectoryReader = {
+            const mockFilesystemReader = {
                 readFiles: async () => []
+            };
+            const mockZipReader = {
+                extractFiles: async () => []
+            };
+            const mockTarReader = {
+                extractFiles: async () => []
             };
 
             const sourceReader = SourceReaderFactory.create(
                 'ZipFile',
                 mockLogger,
-                { directoryReader: mockDirectoryReader }
+                { filesystemReader: mockFilesystemReader, zipReader: mockZipReader, tarReader: mockTarReader }
             );
 
             expect(sourceReader).toBeInstanceOf(DirectorySourceReader);
@@ -77,14 +83,20 @@ describe('SourceReaderFactory', () => {
         });
 
         test('should create DirectorySourceReader for Directory source type', () => {
-            const mockDirectoryReader = {
+            const mockFilesystemReader = {
                 readFiles: async () => []
+            };
+            const mockZipReader = {
+                extractFiles: async () => []
+            };
+            const mockTarReader = {
+                extractFiles: async () => []
             };
 
             const sourceReader = SourceReaderFactory.create(
                 'Directory',
                 mockLogger,
-                { directoryReader: mockDirectoryReader }
+                { filesystemReader: mockFilesystemReader, zipReader: mockZipReader, tarReader: mockTarReader }
             );
 
             expect(sourceReader).toBeInstanceOf(DirectorySourceReader);
@@ -129,8 +141,14 @@ describe('SourceReaderFactory', () => {
                 getLastExecutionTime: async () => null,
                 saveLastExecutionTime: async () => { }
             };
-            const mockDirectoryReader = {
+            const mockFilesystemReader = {
                 readFiles: async () => []
+            };
+            const mockZipReader = {
+                extractFiles: async () => []
+            };
+            const mockTarReader = {
+                extractFiles: async () => []
             };
 
             const sources: Array<{ type: SourceAdapter; deps: any; expectedClass: any; expectedSourceType: string }> = [
@@ -142,13 +160,13 @@ describe('SourceReaderFactory', () => {
                 },
                 {
                     type: 'ZipFile',
-                    deps: { directoryReader: mockDirectoryReader },
+                    deps: { filesystemReader: mockFilesystemReader, zipReader: mockZipReader, tarReader: mockTarReader },
                     expectedClass: DirectorySourceReader,
                     expectedSourceType: 'Directory'
                 },
                 {
                     type: 'Directory',
-                    deps: { directoryReader: mockDirectoryReader },
+                    deps: { filesystemReader: mockFilesystemReader, zipReader: mockZipReader, tarReader: mockTarReader },
                     expectedClass: DirectorySourceReader,
                     expectedSourceType: 'Directory'
                 }

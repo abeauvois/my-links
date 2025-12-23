@@ -44,6 +44,7 @@
     "googleapis": "^166.0.0",
     "jszip": "^3.10.1",
     "lightweight-charts": "^5.0.9",
+    "tar": "^7.5.2",
     "trading-client": "^1.0.3"
   },
   "devDependencies": {
@@ -51,6 +52,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/user-event": "^14.6.1",
     "@types/bun": "latest",
+    "@types/tar": "^6.1.13",
     "concurrently": "^9.2.0",
     "typescript": "^5.0.0"
   }

@@ -18,7 +18,7 @@ export * from '../../../src/domain/ports/ILinkRepository.js'
 export * from '../../../src/domain/ports/ILogger.js'
 
 // Workflow abstractions
-export * from '../../../src/domain/workflow/index.js'
+export * from '../../../src/application/workflows/index.js'
 
 // Repositories
 export * from '../../../src/infrastructure/repositories/InMemoryBookmarkRepository.js'

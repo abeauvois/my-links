@@ -6,7 +6,9 @@ import { SourceAdapter } from '../../domain/entities/SourceAdapter.js';
 import { ILogger } from '../../domain/ports/ILogger.js';
 import { IEmailClient } from '../../domain/ports/IEmailClient.js';
 import { ITimestampRepository } from '../../domain/ports/ITimestampRepository.js';
-import { IDirectoryReader } from '../../domain/ports/IDirectoryReader.js';
+import { IFilesystemReader } from '../../domain/ports/IFilesystemReader.js';
+import { IZipReader } from '../../domain/ports/IZipReader.js';
+import { ITarReader } from '../../domain/ports/ITarReader.js';
 
 /**
  * Dependencies that may be needed by different source readers
@@ -14,7 +16,9 @@ import { IDirectoryReader } from '../../domain/ports/IDirectoryReader.js';
 export interface SourceReaderDependencies {
     emailClient?: IEmailClient;
     timestampRepository?: ITimestampRepository;
-    directoryReader?: IDirectoryReader;
+    filesystemReader?: IFilesystemReader;
+    zipReader?: IZipReader;
+    tarReader?: ITarReader;
 }
 
 /**
@@ -91,18 +95,18 @@ export class SourceReaderFactory {
     }
 
     /**
-     * Creates a Directory source reader (also handles ZipFile sources)
+     * Creates a Directory source reader (also handles ZipFile and tar archives)
      */
     private static createDirectorySourceReader(
         logger: ILogger,
         dependencies: SourceReaderDependencies
     ): DirectorySourceReader {
-        const { directoryReader } = dependencies;
+        const { filesystemReader, zipReader, tarReader } = dependencies;
 
-        if (!directoryReader) {
-            throw new Error('Directory source reader requires directoryReader');
+        if (!filesystemReader || !zipReader || !tarReader) {
+            throw new Error('Directory source reader requires filesystemReader, zipReader, and tarReader');
         }
 
-        return new DirectorySourceReader(directoryReader, logger);
+        return new DirectorySourceReader(filesystemReader, zipReader, tarReader, logger);
     }
 }

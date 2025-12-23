@@ -28,12 +28,14 @@ const gmailSource = SourceReaderFactory.create("Gmail", logger, {
 
 // Create a ZipFile source reader
 const zipSource = SourceReaderFactory.create("ZipFile", logger, {
-  directoryReader: directoryReader,
+  filesystemReader: filesystemReader,
+  zipReader: zipReader,
 });
 
 // Create a Directory source reader
 const dirSource = SourceReaderFactory.create("Directory", logger, {
-  directoryReader: directoryReader,
+  filesystemReader: filesystemReader,
+  zipReader: zipReader,
 });
 ```
 
@@ -75,11 +77,11 @@ try {
 
 ### Supported Sources
 
-| Source Type | Required Dependencies                | Description                                    |
-| ----------- | ------------------------------------ | ---------------------------------------------- |
-| `Gmail`     | `emailClient`, `timestampRepository` | Fetches messages from Gmail API                |
-| `ZipFile`   | `directoryReader`                    | Extracts and processes files from zip archives |
-| `Directory` | `directoryReader`                    | Reads and processes files from directories     |
+| Source Type | Required Dependencies                   | Description                                    |
+| ----------- | --------------------------------------- | ---------------------------------------------- |
+| `Gmail`     | `emailClient`, `timestampRepository`    | Fetches messages from Gmail API                |
+| `ZipFile`   | `filesystemReader`, `zipReader`         | Extracts and processes files from zip archives |
+| `Directory` | `filesystemReader`, `zipReader`         | Reads and processes files from directories     |
 
 **Unsupported (will throw)**: `Outlook`, `EmlFile`, `NotionDatabase`, `Other`, `None`
 
@@ -93,7 +95,8 @@ describe("My Service", () => {
   test("should create correct source reader", () => {
     const mockLogger = createMockLogger();
     const mockDeps = {
-      directoryReader: createMockDirectoryReader(),
+      filesystemReader: createMockFilesystemReader(),
+      zipReader: createMockZipReader(),
     };
 
     const sourceReader = SourceReaderFactory.create(
@@ -130,7 +133,8 @@ export const SOURCE_ADAPTERS = [
 // src/infrastructure/factories/SourceReaderFactory.ts
 export interface SourceReaderDependencies {
   emailClient?: IEmailClient;
-  directoryReader?: IDirectoryReader;
+  filesystemReader?: IFilesystemReader;
+  zipReader?: IZipReader;
   myNewClient?: IMyNewClient; // ← Add here
 }
 ```

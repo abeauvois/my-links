@@ -1,10 +1,10 @@
 import { RawFile } from '../entities/RawFile';
 
 /**
- * Port for reading files from a directory
+ * Port for reading files from the filesystem
  * Abstracts file system operations for directory scanning
  */
-export interface IDirectoryReader {
+export interface IFilesystemReader {
     /**
      * Read all files from a directory
      * @param directoryPath - Path to the directory

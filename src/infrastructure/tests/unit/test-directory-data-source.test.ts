@@ -2,12 +2,14 @@ import { test, expect, describe, beforeEach } from 'bun:test';
 import { DirectorySourceReader } from '../../../application/source-readers/DirectorySourceReader';
 import { BaseContent } from '../../../domain/entities/BaseContent.js';
 import { FileIngestionConfig } from '../../../domain/entities/IngestionConfig.js';
-import { IDirectoryReader } from '../../../domain/ports/IDirectoryReader.js';
+import { IFilesystemReader } from '../../../domain/ports/IFilesystemReader.js';
+import { IZipReader } from '../../../domain/ports/IZipReader.js';
+import { ITarReader } from '../../../domain/ports/ITarReader.js';
 import { RawFile, createRawFile } from '../../../domain/entities/RawFile.js';
 import { MockLogger } from './MockLogger';
 
 // Mock implementations
-class MockDirectoryReader implements IDirectoryReader {
+class MockFilesystemReader implements IFilesystemReader {
     private files: RawFile[] = [];
 
     setFiles(files: Map<string, string>) {
@@ -26,16 +28,52 @@ class MockDirectoryReader implements IDirectoryReader {
     }
 }
 
+class MockZipReader implements IZipReader {
+    private files: RawFile[] = [];
+
+    setFiles(files: Map<string, string>) {
+        // Convert Map<filename, content> to RawFile[]
+        this.files = Array.from(files.entries()).map(([filename, content]) =>
+            createRawFile(filename, content)
+        );
+    }
+
+    async extractFiles(zipPath: string, filePattern?: string): Promise<RawFile[]> {
+        return this.files;
+    }
+}
+
+class MockTarReader implements ITarReader {
+    private files: RawFile[] = [];
+
+    setFiles(files: Map<string, string>) {
+        // Convert Map<filename, content> to RawFile[]
+        this.files = Array.from(files.entries()).map(([filename, content]) =>
+            createRawFile(filename, content)
+        );
+    }
+
+    async extractFiles(tarPath: string, filePattern?: string): Promise<RawFile[]> {
+        return this.files;
+    }
+}
+
 describe('DirectorySourceReader', () => {
-    let mockDirectoryReader: MockDirectoryReader;
+    let mockFilesystemReader: MockFilesystemReader;
+    let mockZipReader: MockZipReader;
+    let mockTarReader: MockTarReader;
     let mockLogger: MockLogger;
     let sourceReader: DirectorySourceReader;
 
     beforeEach(() => {
-        mockDirectoryReader = new MockDirectoryReader();
+        mockFilesystemReader = new MockFilesystemReader();
+        mockZipReader = new MockZipReader();
+        mockTarReader = new MockTarReader();
         mockLogger = new MockLogger();
         sourceReader = new DirectorySourceReader(
-            mockDirectoryReader,
+            mockFilesystemReader,
+            mockZipReader,
+            mockTarReader,
             mockLogger
         );
     });
@@ -58,7 +96,7 @@ describe('DirectorySourceReader', () => {
             ['email2.eml', 'Content of email 2 with link: https://test.com'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -75,7 +113,7 @@ describe('DirectorySourceReader', () => {
 
     test('should handle empty directory', async () => {
         const files = new Map<string, string>();
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/empty',
@@ -91,7 +129,7 @@ describe('DirectorySourceReader', () => {
             ['single.eml', 'Single email content'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -111,7 +149,7 @@ describe('DirectorySourceReader', () => {
             ['file3.eml', 'Content 3'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -132,7 +170,7 @@ describe('DirectorySourceReader', () => {
             ['email.eml', 'Email content'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -152,7 +190,7 @@ describe('DirectorySourceReader', () => {
             ['test.eml', testContent],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -170,7 +208,7 @@ describe('DirectorySourceReader', () => {
             ['email.eml', 'Content'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -191,7 +229,7 @@ describe('DirectorySourceReader', () => {
             ['dir2/file2.eml', 'Content 2'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',
@@ -212,7 +250,7 @@ describe('DirectorySourceReader', () => {
             ['file2.txt', 'Content 2'],
         ]);
 
-        mockDirectoryReader.setFiles(files);
+        mockFilesystemReader.setFiles(files);
 
         const config: FileIngestionConfig = {
             path: '/path/to/directory',

@@ -1,7 +1,9 @@
 import { test, expect, describe } from 'bun:test';
 import { join } from 'node:path';
 import { DirectorySourceReader } from '../../../../application/source-readers/DirectorySourceReader';
-import { DirectoryReader } from '../../../adapters/DirectoryReader';
+import { FilesystemReader } from '../../../adapters/FilesystemReader';
+import { ZipReader } from '../../../adapters/ZipReader';
+import { TarReader } from '../../../adapters/TarReader';
 import { FileIngestionConfig } from '../../../../domain/entities/IngestionConfig';
 import { ConsoleLogger } from '../ConsoleLogger';
 
@@ -10,8 +12,10 @@ const fixturePath2 = '../../fixtures/test_mylinks_2'
 
 describe('DirectorySourceReader Integration Tests', () => {
     const logger = new ConsoleLogger();
-    const directoryReader = new DirectoryReader();
-    const sourceReader = new DirectorySourceReader(directoryReader, logger);
+    const filesystemReader = new FilesystemReader();
+    const zipReader = new ZipReader();
+    const tarReader = new TarReader();
+    const sourceReader = new DirectorySourceReader(filesystemReader, zipReader, tarReader, logger);
 
     test('should ingest real directory with email files', async () => {
         const dirPath = join(__dirname, fixturePath);
