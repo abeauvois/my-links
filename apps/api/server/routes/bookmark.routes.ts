@@ -2,11 +2,8 @@ import { Hono } from 'hono'
 import type { HonoEnv } from '../types'
 import { createBookmarkValidator } from '../validators/create-bookmark.validator'
 import { authMiddleware } from '@/middlewares/auth.middleware'
-import {
-  InMemoryBookmarkRepository,
-  Bookmark,
-  GetBookmarksByUserIdService,
-} from '@platform/domain'
+import { Bookmark, GetBookmarksByUserIdService } from '@platform/platform-domain'
+import { InMemoryBookmarkRepository } from '../repositories/InMemoryBookmarkRepository'
 
 const repository = new InMemoryBookmarkRepository()
 const getBookmarksByUserIdService = new GetBookmarksByUserIdService(repository)
@@ -37,6 +34,7 @@ export const bookmarks = new Hono<HonoEnv>()
         '', // rawContent
         new Date(), // createdAt
         new Date(), // updatedAt
+        'unknown', // contentType
         user.id // userId
       )
 

@@ -1,5 +1,5 @@
 import { ApiConfigProvider } from '@platform/sdk';
-import type { IConfigProvider, ILogger } from '@platform/domain';
+import type { IConfigProvider, ILogger } from '@platform/platform-domain';
 import { AuthManager } from './AuthManager';
 import { CliuiLogger } from './CliuiLogger';
 

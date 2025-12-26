@@ -1,7 +1,7 @@
 import type { IFetcher } from '../ports/IFetcher.js';
 import type { ILogger } from '../ports/ILogger.js';
 import type { AuthCredentials } from '../ports/IAuth.js';
-import type { Bookmark } from '@platform/domain';
+import type { Bookmark } from '@platform/platform-domain';
 
 interface FetcherConfig {
     baseUrl: string;

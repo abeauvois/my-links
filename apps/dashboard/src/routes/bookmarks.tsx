@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, CircleX } from 'lucide-react'
 import { authClient } from '../lib/auth-client'
 import { BookmarkForm } from '../components/BookmarkForm'
-import type { SourceAdapter } from '@platform/domain'
+import type { SourceAdapter } from '@platform/platform-domain'
 import type { AppType } from '../../../server/index'
 
 const client = hc<AppType>('/')

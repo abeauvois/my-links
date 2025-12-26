@@ -1,4 +1,4 @@
-import type { IConfigProvider } from '@platform/domain';
+import type { IConfigProvider } from '@platform/platform-domain';
 
 /**
  * Configuration provider that loads from .env files

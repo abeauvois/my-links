@@ -1,7 +1,7 @@
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 
-import { SOURCE_ADAPTERS } from '@platform/domain';
+import { SOURCE_ADAPTERS } from '@platform/platform-domain';
 import { raw } from 'hono/html';
 
 export const createBookmarkSchema =

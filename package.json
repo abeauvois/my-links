@@ -35,7 +35,7 @@
     "test:e2e": "bun run test:e2e:zip && bun run test:e2e:folder",
     "test:e2e:zip": "bun run src/infrastructure/tests/e2e/test-workflow-zip-file-producer.ts",
     "test:e2e:folder": "bun run src/infrastructure/tests/e2e/test-workflow-single-folder-producer.ts",
-    "test:unit": "bun run src/infrastructure/tests/unit/test-csv-repository.ts && bun test ./src/infrastructure/tests/unit/test-fetch-recent-gmails-timestamp.test.ts"
+    "test:unit": "bun test ./packages/platform-sdk/tests/unit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.32.1",

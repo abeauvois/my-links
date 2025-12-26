@@ -1,4 +1,4 @@
-import type { IConfigProvider, ILogger } from '@platform/domain';
+import type { IConfigProvider, ILogger } from '@platform/platform-domain';
 import { PlatformApiClient } from '../PlatformApiClient.js';
 
 interface ApiConfigProviderOptions {
@@ -55,7 +55,7 @@ export class ApiConfigProvider implements IConfigProvider {
      */
     async load(): Promise<void> {
         try {
-            const response = await this.client.fetchConfig();
+            const response = await this.client.config.fetchAll();
 
             this.config.clear();
             for (const [key, value] of Object.entries(response.config)) {

@@ -6,6 +6,17 @@
 // API Client
 export { PlatformApiClient } from './PlatformApiClient.js';
 
+// Individual Clients
+export {
+    BaseClient,
+    AuthClient,
+    BookmarkClient,
+    ConfigClient,
+    IngestClient,
+    type BaseClientConfig,
+    type Bookmark,
+} from './clients/index.js';
+
 // Config Providers
 export { EnvConfigProvider, ApiConfigProvider } from './config/index.js';
 

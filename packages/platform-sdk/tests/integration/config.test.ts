@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeAll } from 'bun:test';
 import { PlatformApiClient, ApiConfigProvider } from '../../src/index.js';
-import type { ILogger } from '@platform/domain';
+import type { ILogger } from '@platform/platform-domain';
 
 /**
  * Integration tests for Configuration API
@@ -61,7 +61,7 @@ describe('Config API Integration Tests', () => {
 
         // Attempt to sign in to get a session
         try {
-            const authResponse = await client.signIn({
+            const authResponse = await client.auth.signIn({
                 email: 'test@example.com',
                 password: 'password123',
             });
@@ -83,7 +83,7 @@ describe('Config API Integration Tests', () => {
                 return;
             }
 
-            const configResponse = await client.fetchConfig();
+            const configResponse = await client.config.fetchAll();
 
             expect(configResponse).toBeDefined();
             expect(configResponse.userId).toBeDefined();
@@ -101,7 +101,7 @@ describe('Config API Integration Tests', () => {
                 logger,
             });
 
-            await expect(unauthClient.fetchConfig()).rejects.toThrow(
+            await expect(unauthClient.config.fetchAll()).rejects.toThrow(
                 'Authentication required'
             );
 
@@ -117,7 +117,7 @@ describe('Config API Integration Tests', () => {
             }
 
             // First get available keys
-            const configResponse = await client.fetchConfig();
+            const configResponse = await client.config.fetchAll();
 
             if (configResponse.keys.length === 0) {
                 console.log('⚠️  Skipping: No config keys available');
@@ -125,7 +125,7 @@ describe('Config API Integration Tests', () => {
             }
 
             const testKey = configResponse.keys[0];
-            const valueResponse = await client.fetchConfigValue(testKey);
+            const valueResponse = await client.config.fetchValue(testKey);
 
             expect(valueResponse).toBeDefined();
             expect(valueResponse.key).toBe(testKey);
@@ -142,7 +142,7 @@ describe('Config API Integration Tests', () => {
             }
 
             await expect(
-                client.fetchConfigValue('NON_EXISTENT_KEY_12345')
+                client.config.fetchValue('NON_EXISTENT_KEY_12345')
             ).rejects.toThrow();
 
             console.log('✓ Properly rejected non-existent config key');
@@ -156,7 +156,7 @@ describe('Config API Integration Tests', () => {
 
             // DATABASE_URL should not be exposed
             await expect(
-                client.fetchConfigValue('DATABASE_URL')
+                client.config.fetchValue('DATABASE_URL')
             ).rejects.toThrow();
 
             console.log('✓ Properly rejected disallowed config key');
@@ -170,7 +170,7 @@ describe('Config API Integration Tests', () => {
                 return;
             }
 
-            const batchResponse = await client.fetchConfigBatch([
+            const batchResponse = await client.config.fetchBatch([
                 'ANTHROPIC_API_KEY',
                 'NOTION_INTEGRATION_TOKEN',
                 'NON_EXISTENT_KEY',
@@ -195,7 +195,7 @@ describe('Config API Integration Tests', () => {
                 return;
             }
 
-            const batchResponse = await client.fetchConfigBatch([]);
+            const batchResponse = await client.config.fetchBatch([]);
 
             expect(batchResponse).toBeDefined();
             expect(batchResponse.found).toEqual([]);
@@ -212,7 +212,7 @@ describe('Config API Integration Tests', () => {
                 return;
             }
 
-            const keysResponse = await client.fetchConfigKeys();
+            const keysResponse = await client.config.fetchKeys();
 
             expect(keysResponse).toBeDefined();
             expect(keysResponse.keys).toBeDefined();

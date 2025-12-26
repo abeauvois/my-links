@@ -1,5 +1,5 @@
 import { PlatformApiClient } from '@platform/sdk';
-import type { ILogger } from '@platform/domain';
+import type { ILogger } from '@platform/platform-domain';
 import type {
     Position,
     Order,

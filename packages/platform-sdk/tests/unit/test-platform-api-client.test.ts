@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, mock } from 'bun:test';
 import { PlatformApiClient } from '../../src/PlatformApiClient.js';
-import type { ILogger } from '@platform/domain';
+import type { ILogger } from '@platform/platform-domain';
 
 describe('PlatformApiClient', () => {
     let mockLogger: ILogger;
@@ -73,7 +73,7 @@ describe('PlatformApiClient', () => {
                 logger: mockLogger,
             });
 
-            await expect(client.fetchBookmarks()).rejects.toThrow('Authentication required');
+            await expect(client.bookmarks.fetchAll()).rejects.toThrow('Authentication required');
         });
     });
 

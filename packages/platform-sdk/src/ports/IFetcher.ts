@@ -1,4 +1,4 @@
-import type { Bookmark } from '@platform/domain';
+import type { Bookmark } from '@platform/platform-domain';
 
 /**
  * Domain port: Bookmark fetcher interface

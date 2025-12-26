@@ -1,6 +1,6 @@
-import { SOURCE_ADAPTERS } from '@platform/domain'
+import { SOURCE_ADAPTERS } from '@platform/platform-domain'
 import { useForm } from '@tanstack/react-form'
-import type { SourceAdapter } from '@platform/domain'
+import type { SourceAdapter } from '@platform/platform-domain'
 
 interface BookmarkFormData {
     url: string

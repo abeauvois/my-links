@@ -1,5 +1,5 @@
 import { TradingApiClient } from '@platform/trading-sdk'
-import type { ILogger } from '@platform/domain'
+import type { ILogger } from '@platform/platform-domain'
 
 /**
  * Simple console logger for browser environment

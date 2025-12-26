@@ -15,7 +15,7 @@
     "allowSyntheticDefaultImports": true,
     "types": ["bun-types"],
     "paths": {
-      "@platform/domain": ["../domain/src"],
+      "@platform/platform-domain": ["../platform-domain/src"],
       "@platform/trading-domain": ["../trading-domain/src"],
       "@platform/sdk": ["../platform-sdk/src"]
     }

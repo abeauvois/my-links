@@ -13,7 +13,7 @@
     },
     "dependencies": {
         "@platform/sdk": "workspace:*",
-        "@platform/domain": "workspace:*",
+        "@platform/platform-domain": "workspace:*",
         "cleye": "^2.0.0",
         "@poppinss/cliui": "^6.5.0"
     },

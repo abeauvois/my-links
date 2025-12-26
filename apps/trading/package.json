@@ -21,7 +21,7 @@
     "@neondatabase/serverless": "^1.0.1",
     "@platform/auth": "workspace:*",
     "@platform/db": "workspace:*",
-    "@platform/domain": "workspace:*",
+    "@platform/platform-domain": "workspace:*",
     "@platform/trading-domain": "workspace:*",
     "@scalar/hono-api-reference": "^0.9.25",
     "drizzle-orm": "^0.44.4",

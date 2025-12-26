@@ -30,6 +30,7 @@ const router = app
       credentials: true,
     })
   )
+  .get('/api/health', (c) => c.json({ status: 'ok' }))
   .on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw))
   .route('/api/todos', todos)
   .route('/api/bookmarks', bookmarks)

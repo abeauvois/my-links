@@ -15,7 +15,7 @@
     "@neondatabase/serverless": "^1.0.1",
     "@platform/auth": "workspace:*",
     "@platform/db": "workspace:*",
-    "@platform/domain": "workspace:*",
+    "@platform/platform-domain": "workspace:*",
     "drizzle-orm": "^0.44.4",
     "hono": "^4.8.12",
     "pg": "^8.16.3",

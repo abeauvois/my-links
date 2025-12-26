@@ -18,7 +18,7 @@
         "test:integration": "bun test ./tests/integration"
     },
     "dependencies": {
-        "@platform/domain": "workspace:*"
+        "@platform/platform-domain": "workspace:*"
     },
     "devDependencies": {
         "@types/bun": "latest",

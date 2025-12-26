@@ -1,32 +1,59 @@
 import { describe, test, expect, beforeAll } from 'bun:test';
 import { PlatformApiClient } from '../../src/index.js';
-import type { ILogger, Bookmark } from '@platform/domain';
+import { Bookmark, type ILogger } from '@platform/platform-domain';
 
 /**
- * API Bookmark type includes server-generated fields
+ * API Bookmark type includes server-generated fields (id is guaranteed from API)
  */
-interface ApiBookmark extends Bookmark {
-    id: string;
+type ApiBookmark = Bookmark & { id: string };
+
+const API_BASE_URL = 'http://localhost:3000';
+
+/**
+ * Check if the API server is available before running integration tests.
+ * This runs synchronously at module load time so skipIf can use the result.
+ */
+async function checkServerAvailable(): Promise<boolean> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/health`, {
+            method: 'GET',
+            signal: AbortSignal.timeout(2000),
+        });
+        return response.ok;
+    } catch {
+        return false;
+    }
 }
+
+// Check server availability at module load time
+const serverAvailablePromise = checkServerAvailable();
+let serverAvailable = false;
+
+// Block until we know if server is available (runs before tests start)
+await serverAvailablePromise.then(available => {
+    serverAvailable = available;
+    if (!available) {
+        console.log('\n⚠️  API server not available at', API_BASE_URL);
+        console.log('   Skipping integration tests. Start the server with: bun run api\n');
+    }
+});
 
 /**
  * Integration test for Platform SDK
- * 
+ *
  * Prerequisites:
- * 1. Web server must be running at http://localhost:5000
+ * 1. API server must be running at http://localhost:3000
  * 2. Test user must exist with credentials:
  *    - Email: test@example.com
  *    - Password: password123
- * 3. At least one bookmark should exist in the database
- * 
+ *
+ * To start the server:
+ *   bun run api
+ *
  * To create test user:
- * curl -X POST http://localhost:5000/api/auth/sign-up/email \
+ * curl -X POST http://localhost:3000/api/auth/sign-up/email \
  *   -H "Content-Type: application/json" \
  *   -d '{"email":"test@example.com","password":"password123","name":"Test User"}'
- * 
- * To add a test bookmark:
- * 1. Sign in using the client to get session
- * 2. Use createBookmark() method to add bookmarks
  */
 
 class TestLogger implements ILogger {
@@ -51,8 +78,7 @@ class TestLogger implements ILogger {
     }
 }
 
-describe('PlatformApiClient Integration Tests', () => {
-    const API_BASE_URL = 'http://localhost:3000';
+describe.skipIf(!serverAvailable)('PlatformApiClient Integration Tests', () => {
     let client: PlatformApiClient;
     let logger: ILogger;
 
@@ -71,29 +97,21 @@ describe('PlatformApiClient Integration Tests', () => {
 
     test('should ingest gmail with options', async () => {
         const platformClient = new PlatformApiClient({
-            baseUrl: "http://localhost:3000",
+            baseUrl: API_BASE_URL,
             logger
         });
 
-        // Sign in to get authentication
-        try {
-            await platformClient.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
-        } catch (error) {
-            console.log('⚠️  Skipping: Test user does not exist or server not running');
-            return;
-        }
+        await platformClient.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
         const preset = "gmail";
 
-        const workflow = platformClient.ingest(preset, {
+        const workflow = platformClient.ingest.create(preset, {
             filter: {
                 email: "abeauvois@gmail.com"
             },
-            // skipAnalysis,
-            // skipTwitter
         });
 
         await workflow.execute({
@@ -104,57 +122,36 @@ describe('PlatformApiClient Integration Tests', () => {
     }, { timeout: 15000 })
 
     test('should sign in with valid credentials', async () => {
-        try {
-            const authResponse = await client.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
-            console.log("🚀 ~ authResponse:", authResponse)
+        const authResponse = await client.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
-            expect(authResponse).toBeDefined();
-            expect(authResponse.sessionToken).toBeDefined();
-            expect(authResponse.userId).toBeDefined();
-            expect(authResponse.email).toBe('test@example.com');
-            expect(typeof authResponse.sessionToken).toBe('string');
-
-            console.log('✓ Sign in successful');
-        } catch (error) {
-            console.log('⚠️  Skipping: Test user does not exist or server not running');
-            console.log('   Create test user with:');
-            console.log('   curl -X POST http://localhost:5000/api/auth/sign-up/email \\');
-            console.log('     -H "Content-Type: application/json" \\');
-            console.log('     -d \'{"email":"test@example.com","password":"password123","name":"Test User"}\'');
-        }
+        expect(authResponse).toBeDefined();
+        expect(authResponse.sessionToken).toBeDefined();
+        expect(authResponse.userId).toBeDefined();
+        expect(authResponse.email).toBe('test@example.com');
+        expect(typeof authResponse.sessionToken).toBe('string');
     }, { timeout: 10000 });
 
     test('should fetch bookmarks with existing session', async () => {
-        // Sign in first to get session
-        try {
-            await client.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
+        await client.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
-            const bookmarks = await client.fetchBookmarks();
+        const bookmarks = await client.bookmarks.fetchAll();
 
-            expect(bookmarks).toBeDefined();
-            expect(Array.isArray(bookmarks)).toBe(true);
+        expect(bookmarks).toBeDefined();
+        expect(Array.isArray(bookmarks)).toBe(true);
 
-            if (bookmarks.length > 0) {
-                const bookmark = bookmarks[0];
-                expect(bookmark).toHaveProperty('url');
-                expect(bookmark).toHaveProperty('sourceAdapter');
-                expect(bookmark).toHaveProperty('tags');
-                expect(typeof bookmark.url).toBe('string');
-                expect(Array.isArray(bookmark.tags)).toBe(true);
-
-                console.log(`✓ Found ${bookmarks.length} bookmarks`);
-                console.log(`✓ First bookmark: ${bookmark.url}`);
-            } else {
-                console.log('ℹ️  No bookmarks found in database');
-            }
-        } catch (error) {
-            console.log('⚠️  Skipping: Could not authenticate or fetch bookmarks');
+        if (bookmarks.length > 0) {
+            const bookmark = bookmarks[0];
+            expect(bookmark).toHaveProperty('url');
+            expect(bookmark).toHaveProperty('sourceAdapter');
+            expect(bookmark).toHaveProperty('tags');
+            expect(typeof bookmark.url).toBe('string');
+            expect(Array.isArray(bookmark.tags)).toBe(true);
         }
     }, { timeout: 10000 });
 
@@ -165,12 +162,12 @@ describe('PlatformApiClient Integration Tests', () => {
             logger,
         });
 
-        await clientWithSession.signIn({
+        await clientWithSession.auth.signIn({
             email: 'test@example.com',
             password: 'password123',
         });
 
-        const bookmarks = await clientWithSession.fetchBookmarks();
+        const bookmarks = await clientWithSession.bookmarks.fetchAll();
 
         expect(bookmarks).toBeDefined();
         expect(Array.isArray(bookmarks)).toBe(true);
@@ -179,70 +176,48 @@ describe('PlatformApiClient Integration Tests', () => {
     }, { timeout: 10000 });
 
     test('should create and delete a bookmark', async () => {
-        try {
-            // Sign in
-            await client.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
+        await client.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
-            // Create bookmark
-            const newBookmark = await client.createBookmark({
-                url: 'https://example.com/test-' + Date.now(),
-                sourceAdapter: 'Other',
-                tags: ['integration-test'],
-                summary: 'Test bookmark for integration tests',
-            }) as ApiBookmark;
+        const newBookmark = await client.bookmarks.create({
+            url: 'https://example.com/test-' + Date.now(),
+            sourceAdapter: 'Other',
+            tags: ['integration-test'],
+            summary: 'Test bookmark for integration tests',
+        }) as ApiBookmark;
 
-            expect(newBookmark).toBeDefined();
-            expect(newBookmark.url).toContain('https://example.com/test-');
-            expect(newBookmark.tags).toContain('integration-test');
+        expect(newBookmark).toBeDefined();
+        expect(newBookmark.url).toContain('https://example.com/test-');
+        expect(newBookmark.tags).toContain('integration-test');
 
-            console.log('✓ Created bookmark:', newBookmark.url);
-
-            // Delete bookmark
-            await client.deleteBookmark(newBookmark.id);
-
-            console.log('✓ Deleted bookmark:', newBookmark.id);
-        } catch (error) {
-            console.log('⚠️  Skipping: Could not create/delete bookmark');
-        }
+        // Clean up
+        await client.bookmarks.delete(newBookmark.id);
     }, { timeout: 15000 });
 
     test('should update a bookmark', async () => {
-        try {
-            // Sign in
-            await client.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
+        await client.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
-            // Create bookmark
-            const newBookmark = await client.createBookmark({
-                url: 'https://example.com/update-test-' + Date.now(),
-                sourceAdapter: 'Other',
-                tags: ['original-tag'],
-            }) as ApiBookmark;
+        const newBookmark = await client.bookmarks.create({
+            url: 'https://example.com/update-test-' + Date.now(),
+            sourceAdapter: 'Other',
+            tags: ['original-tag'],
+        }) as ApiBookmark;
 
-            console.log('✓ Created bookmark for update test');
+        const updatedBookmark = await client.bookmarks.update(newBookmark.id, {
+            tags: ['updated-tag', 'test'],
+            summary: 'Updated summary',
+        }) as ApiBookmark;
 
-            // Update bookmark
-            const updatedBookmark = await client.updateBookmark(newBookmark.id, {
-                tags: ['updated-tag', 'test'],
-                summary: 'Updated summary',
-            }) as ApiBookmark;
+        expect(updatedBookmark.tags).toContain('updated-tag');
+        expect(updatedBookmark.summary).toBe('Updated summary');
 
-            expect(updatedBookmark.tags).toContain('updated-tag');
-            expect(updatedBookmark.summary).toBe('Updated summary');
-
-            console.log('✓ Updated bookmark successfully');
-
-            // Clean up
-            await client.deleteBookmark(newBookmark.id);
-            console.log('✓ Cleaned up test bookmark');
-        } catch (error) {
-            console.log('⚠️  Skipping: Could not update bookmark');
-        }
+        // Clean up
+        await client.bookmarks.delete(newBookmark.id);
     }, { timeout: 15000 });
 
     test('should handle authentication failure gracefully', async () => {
@@ -252,13 +227,11 @@ describe('PlatformApiClient Integration Tests', () => {
         });
 
         await expect(
-            testClient.signIn({
+            testClient.auth.signIn({
                 email: 'nonexistent@example.com',
                 password: 'wrongpassword',
             })
         ).rejects.toThrow();
-
-        console.log('✓ Properly handled invalid credentials');
     }, { timeout: 10000 });
 
     test('should handle API errors gracefully when not authenticated', async () => {
@@ -267,12 +240,9 @@ describe('PlatformApiClient Integration Tests', () => {
             logger,
         });
 
-        // Should throw error when trying to fetch bookmarks without auth
         await expect(
-            unauthenticatedClient.fetchBookmarks()
+            unauthenticatedClient.bookmarks.fetchAll()
         ).rejects.toThrow('Authentication required');
-
-        console.log('✓ Properly handled unauthenticated request');
     }, { timeout: 10000 });
 
     test('should handle invalid session token', async () => {
@@ -283,31 +253,21 @@ describe('PlatformApiClient Integration Tests', () => {
         });
 
         await expect(
-            clientWithBadToken.fetchBookmarks()
+            clientWithBadToken.bookmarks.fetchAll()
         ).rejects.toThrow();
-
-        console.log('✓ Properly handled invalid session token');
     }, { timeout: 10000 });
 
     test('should sign out successfully', async () => {
-        try {
-            // Sign in first
-            await client.signIn({
-                email: 'test@example.com',
-                password: 'password123',
-            });
+        await client.auth.signIn({
+            email: 'test@example.com',
+            password: 'password123',
+        });
 
-            // Sign out
-            await client.signOut();
+        await client.auth.signOut();
 
-            // Should not be able to fetch bookmarks after sign out
-            await expect(
-                client.fetchBookmarks()
-            ).rejects.toThrow('Authentication required');
-
-            console.log('✓ Sign out successful');
-        } catch (error) {
-            console.log('⚠️  Skipping: Could not test sign out');
-        }
+        // Should not be able to fetch bookmarks after sign out
+        await expect(
+            client.bookmarks.fetchAll()
+        ).rejects.toThrow('Authentication required');
     }, { timeout: 10000 });
 });
