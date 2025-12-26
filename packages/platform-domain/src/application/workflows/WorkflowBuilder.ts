@@ -1,5 +1,5 @@
 import { ILogger } from '../../domain/ports/ILogger';
-import { IWorkflowStep, WorkflowContext, createWorkflowContext } from './IWorkflowStep';
+import { IWorkflowStep, WorkflowContext, createWorkflowContext, ItemProcessedInfo } from './IWorkflowStep';
 
 /**
  * Statistics about workflow execution
@@ -56,6 +56,18 @@ export interface ErrorHandlerResult {
 }
 
 /**
+ * Information passed to the onComplete hook
+ */
+export interface WorkflowCompleteInfo<T> {
+    /** Execution statistics */
+    stats: WorkflowExecutionStats;
+    /** Final workflow context */
+    context: WorkflowContext<T>;
+    /** All items that were processed during the workflow */
+    processedItems: T[];
+}
+
+/**
  * Lifecycle hooks for workflow execution
  */
 export interface WorkflowLifecycleHooks<T> {
@@ -64,6 +76,12 @@ export interface WorkflowLifecycleHooks<T> {
      * Use for initialization, logging, or setup
      */
     onStart?: (info: WorkflowStartInfo) => Promise<void> | void;
+
+    /**
+     * Called when an item is processed within a step
+     * Use for progress updates, logging, or real-time feedback to outer apps
+     */
+    onItemProcessed?: (info: ItemProcessedInfo<T>) => Promise<void> | void;
 
     /**
      * Called when an error occurs during step execution
@@ -75,8 +93,9 @@ export interface WorkflowLifecycleHooks<T> {
     /**
      * Called after the workflow completes (success or failure)
      * Always called, even if an error occurred
+     * Provides access to all processed items for display by outer apps (CLI, API, web)
      */
-    onComplete?: (stats: WorkflowExecutionStats, finalContext: WorkflowContext<T>) => Promise<void> | void;
+    onComplete?: (info: WorkflowCompleteInfo<T>) => Promise<void> | void;
 }
 
 /**
@@ -116,6 +135,15 @@ export class WorkflowBuilder<T> {
      */
     onStart(callback: WorkflowLifecycleHooks<T>['onStart']): this {
         this.hooks.onStart = callback;
+        return this;
+    }
+
+    /**
+     * Register a callback to be called when an item is processed
+     * Use for progress updates and real-time feedback
+     */
+    onItemProcessed(callback: WorkflowLifecycleHooks<T>['onItemProcessed']): this {
+        this.hooks.onItemProcessed = callback;
         return this;
     }
 
@@ -172,6 +200,11 @@ export class WorkflowBuilder<T> {
                 let context: WorkflowContext<T> = createWorkflowContext<T>(sourcePath, outputPath);
                 const executedStepNames: string[] = [];
                 let success = true;
+
+                // Inject onItemProcessed callback into context for steps to use
+                if (hooks.onItemProcessed) {
+                    context.onItemProcessed = hooks.onItemProcessed;
+                }
 
                 // Call onStart hook
                 if (hooks.onStart) {
@@ -233,7 +266,7 @@ export class WorkflowBuilder<T> {
                         logger.info('\n✅ Workflow complete!');
                     }
                 } finally {
-                    // Always call onComplete hook
+                    // Always call onComplete hook with all processed items
                     if (hooks.onComplete) {
                         const stats: WorkflowExecutionStats = {
                             totalSteps: steps.length,
@@ -243,7 +276,11 @@ export class WorkflowBuilder<T> {
                             success,
                             itemsProcessed: context.items.length,
                         };
-                        await hooks.onComplete(stats, context);
+                        await hooks.onComplete({
+                            stats,
+                            context,
+                            processedItems: context.items,
+                        });
                     }
                 }
             },

@@ -96,6 +96,8 @@ export type WorkflowPreset = 'full' | 'quick' | 'analyzeOnly' | 'twitterFocus' |
 export interface IngestFilter {
     /** Filter by email address (for Gmail source) */
     email?: string;
+    /** Limit ingestion to emails from the last N days */
+    limitDays?: number;
 }
 
 /**
@@ -137,15 +139,72 @@ export interface WorkflowHookInfo {
 }
 
 /**
+ * Information about a processed item (for SDK polling-based workflows)
+ */
+export interface ItemProcessedInfo {
+    /** Index of the item (0-based) */
+    index: number;
+    /** Total number of items being processed */
+    total: number;
+    /** Name of the step that processed the item */
+    stepName: string;
+    /** Whether the item was processed successfully */
+    success: boolean;
+    /** Error message if processing failed */
+    error?: string;
+}
+
+/**
+ * Information passed to the onComplete hook
+ */
+export interface WorkflowCompleteInfo {
+    /** Logger instance for outputting messages */
+    logger: ILogger;
+    /** Execution statistics */
+    stats: {
+        /** Total number of items processed */
+        itemsProcessed: number;
+        /** Number of items created */
+        itemsCreated: number;
+        /** Duration of the workflow in milliseconds */
+        durationMs: number;
+        /** Whether the workflow completed successfully */
+        success: boolean;
+        /** Any errors that occurred */
+        errors: string[];
+    };
+    /** All items that were processed (available when workflow completes) */
+    processedItems: ProcessedItem[];
+}
+
+/**
+ * Represents a processed item returned by the API
+ */
+export interface ProcessedItem {
+    /** Unique identifier */
+    id: string;
+    /** URL of the bookmark */
+    url: string;
+    /** Source adapter that extracted the bookmark */
+    sourceAdapter: string;
+    /** Tags assigned to the bookmark */
+    tags: string[];
+    /** Summary of the bookmark content */
+    summary?: string;
+}
+
+/**
  * Lifecycle hooks for workflow execution
  */
 export interface WorkflowExecuteOptions {
     /** Called when workflow starts */
     onStart?: (info: WorkflowHookInfo) => void | Promise<void>;
+    /** Called when an item is processed (polled from server) */
+    onItemProcessed?: (info: ItemProcessedInfo) => void | Promise<void>;
     /** Called when an error occurs */
     onError?: (info: WorkflowHookInfo) => void | Promise<void>;
-    /** Called when workflow completes */
-    onComplete?: (info: WorkflowHookInfo) => void | Promise<void>;
+    /** Called when workflow completes with all processed items */
+    onComplete?: (info: WorkflowCompleteInfo) => void | Promise<void>;
 }
 
 /**

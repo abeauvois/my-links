@@ -39,6 +39,10 @@ export const ingestJobs = pgTable('ingest_jobs', {
     status: varchar('status', { length: 20 }).notNull().default('pending'),
     progress: integer('progress').notNull().default(0),
     message: varchar('message', { length: 500 }).notNull().default('Job created'),
+    /** Current step being executed */
+    currentStep: varchar('current_step', { length: 50 }),
+    /** Item progress within current step (JSON: { current: number, total: number }) */
+    itemProgress: jsonb('item_progress'),
     result: jsonb('result'),
     pgBossJobId: uuid('pg_boss_job_id'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

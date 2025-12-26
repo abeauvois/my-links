@@ -86,6 +86,8 @@ export const ingest = new Hono<HonoEnv>()
             status: job.status,
             progress: job.progress,
             message: job.message,
+            currentStep: job.currentStep,
+            itemProgress: job.itemProgress,
             createdAt: job.createdAt,
             updatedAt: job.updatedAt,
             result: job.result,

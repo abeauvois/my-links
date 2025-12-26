@@ -4,6 +4,7 @@ import type {
     WorkflowExecuteOptions,
     IIngestWorkflow,
     ILogger,
+    ProcessedItem,
 } from './types.js';
 
 /**
@@ -30,10 +31,19 @@ interface IngestJobStatus {
     message: string;
     createdAt: string;
     updatedAt: string;
+    /** Current step being executed */
+    currentStep?: string;
+    /** Item progress within current step */
+    itemProgress?: {
+        current: number;
+        total: number;
+    };
     result?: {
         itemsProcessed: number;
         itemsCreated: number;
         errors: string[];
+        /** All processed items for display by outer apps */
+        processedItems?: ProcessedItem[];
     };
 }
 
@@ -57,8 +67,8 @@ interface WorkflowConfig {
  */
 export class IngestWorkflow implements IIngestWorkflow {
     private readonly config: WorkflowConfig;
-    private pollIntervalMs = 500;
-    private maxPollAttempts = 120; // 60 seconds max wait
+    private readonly pollIntervalMs = 500;
+    private readonly maxPollAttempts = 120; // 60 seconds max wait
 
     constructor(config: WorkflowConfig) {
         this.config = config;
@@ -73,6 +83,7 @@ export class IngestWorkflow implements IIngestWorkflow {
     async execute(options?: WorkflowExecuteOptions): Promise<void> {
         const { logger } = this.config;
         const hookInfo = { logger };
+        const startTime = Date.now();
 
         try {
             // Call onStart hook
@@ -80,12 +91,22 @@ export class IngestWorkflow implements IIngestWorkflow {
                 await options.onStart(hookInfo);
             }
 
-            // Execute the workflow via API
-            await this.runWorkflow();
+            // Execute the workflow via API with item progress callback
+            const result = await this.runWorkflow(options?.onItemProcessed);
 
-            // Call onComplete hook
+            // Call onComplete hook with all processed items
             if (options?.onComplete) {
-                await options.onComplete(hookInfo);
+                await options.onComplete({
+                    logger,
+                    stats: {
+                        itemsProcessed: result.itemsProcessed,
+                        itemsCreated: result.itemsCreated,
+                        durationMs: Date.now() - startTime,
+                        success: true,
+                        errors: result.errors,
+                    },
+                    processedItems: result.processedItems,
+                });
             }
         } catch (error) {
             // Call onError hook
@@ -149,39 +170,75 @@ export class IngestWorkflow implements IIngestWorkflow {
     /**
      * Poll for job status until completion
      */
-    private async pollJobStatus(jobId: string): Promise<IngestJobStatus> {
+    private async pollJobStatus(
+        jobId: string,
+        onItemProcessed?: (info: import('./types.js').ItemProcessedInfo) => void | Promise<void>
+    ): Promise<IngestJobStatus> {
         const { logger } = this.config;
         let attempts = 0;
+        let lastMessage = '';
+        let lastItemIndex = -1;
 
-        while (attempts < this.maxPollAttempts) {
-            const status = await this.apiRequest<IngestJobStatus>(`/api/ingest/${jobId}`);
+        // Use spinner for progress updates
+        const spinner = logger.await(`Processing...`);
+        spinner.start();
 
-            if (status.status === 'completed') {
-                logger.info(`Job ${jobId} completed: ${status.message}`);
-                return status;
+        try {
+            while (attempts < this.maxPollAttempts) {
+                const status = await this.apiRequest<IngestJobStatus>(`/api/ingest/${jobId}`);
+                logger.debug(status.itemProgress ?
+                    `Job ${jobId} status: ${status.status}, step: ${status.currentStep}, item progress: ${status.itemProgress.current}/${status.itemProgress.total}` :
+                    `Job ${jobId} status: ${status.status}, step: ${status.currentStep}`);
+
+                if (status.status === 'completed') {
+                    spinner.stop();
+                    return status;
+                }
+
+                if (status.status === 'failed') {
+                    spinner.stop();
+                    throw new Error(`Job ${jobId} failed: ${status.message}`);
+                }
+
+                // Call onItemProcessed hook if item progress changed
+                if (onItemProcessed && status.itemProgress && status.currentStep) {
+                    const currentIndex = status.itemProgress.current - 1;
+                    if (currentIndex > lastItemIndex) {
+                        lastItemIndex = currentIndex;
+                        await onItemProcessed({
+                            index: currentIndex,
+                            total: status.itemProgress.total,
+                            stepName: status.currentStep,
+                            success: true,
+                        });
+                    }
+                }
+
+                // Update spinner with progress
+                if (status.status === 'running' && status.message !== lastMessage) {
+                    lastMessage = status.message;
+                    spinner.update(`${status.message} (${status.progress}%)`);
+                }
+
+                // Wait before next poll
+                await new Promise(resolve => setTimeout(resolve, this.pollIntervalMs));
+                attempts++;
             }
 
-            if (status.status === 'failed') {
-                throw new Error(`Job ${jobId} failed: ${status.message}`);
-            }
-
-            // Log progress updates
-            if (status.status === 'running') {
-                logger.debug(`Job ${jobId} progress: ${status.progress}% - ${status.message}`);
-            }
-
-            // Wait before next poll
-            await new Promise(resolve => setTimeout(resolve, this.pollIntervalMs));
-            attempts++;
+            spinner.stop();
+            throw new Error(`Job ${jobId} timed out after ${this.maxPollAttempts * this.pollIntervalMs / 1000} seconds`);
+        } catch (error) {
+            spinner.stop();
+            throw error;
         }
-
-        throw new Error(`Job ${jobId} timed out after ${this.maxPollAttempts * this.pollIntervalMs / 1000} seconds`);
     }
 
     /**
      * Internal method to run the actual workflow via API
      */
-    private async runWorkflow(): Promise<void> {
+    private async runWorkflow(
+        onItemProcessed?: (info: import('./types.js').ItemProcessedInfo) => void | Promise<void>
+    ): Promise<{ itemsProcessed: number; itemsCreated: number; errors: string[]; processedItems: ProcessedItem[] }> {
         const { preset, options, logger } = this.config;
 
         // Log configuration
@@ -199,17 +256,23 @@ export class IngestWorkflow implements IIngestWorkflow {
         const jobResponse = await this.startJob();
         logger.info(`Job started: ${jobResponse.jobId}`);
 
-        // Poll for completion
-        const finalStatus = await this.pollJobStatus(jobResponse.jobId);
+        // Poll for completion with item progress callback
+        const finalStatus = await this.pollJobStatus(jobResponse.jobId, onItemProcessed);
 
         // Log results
-        if (finalStatus.result) {
-            logger.info(`Processed ${finalStatus.result.itemsProcessed} items, created ${finalStatus.result.itemsCreated}`);
-            if (finalStatus.result.errors.length > 0) {
-                logger.warning(`Encountered ${finalStatus.result.errors.length} errors`);
-            }
+        const result = finalStatus.result ?? { itemsProcessed: 0, itemsCreated: 0, errors: [], processedItems: [] };
+        logger.info(`Processed ${result.itemsProcessed} items, createdx ${result.itemsCreated}`);
+        if (result.errors.length > 0) {
+            logger.warning(`Encountered ${result.errors.length} errors`);
         }
 
         logger.info(`Workflow ${preset} completed`);
+
+        return {
+            itemsProcessed: result.itemsProcessed,
+            itemsCreated: result.itemsCreated,
+            errors: result.errors,
+            processedItems: result.processedItems ?? [],
+        };
     }
 }

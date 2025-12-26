@@ -1,6 +1,6 @@
 import { eq, desc, and } from 'drizzle-orm';
 import { db, ingestJobs } from '@platform/db';
-import type { IngestJobStatus, IngestJobResult } from './types';
+import type { IngestJobStatus, IngestJobResult, ItemProgress } from './types';
 
 export interface IngestJobRecord {
     id: string;
@@ -9,6 +9,8 @@ export interface IngestJobRecord {
     status: IngestJobStatus;
     progress: number;
     message: string;
+    currentStep: string | null;
+    itemProgress: ItemProgress | null;
     result: IngestJobResult | null;
     pgBossJobId: string | null;
     createdAt: Date | null;
@@ -67,6 +69,8 @@ export async function updateIngestJobStatus(
         status?: IngestJobStatus;
         progress?: number;
         message?: string;
+        currentStep?: string;
+        itemProgress?: ItemProgress;
         result?: IngestJobResult;
     }
 ): Promise<void> {

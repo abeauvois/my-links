@@ -2,12 +2,12 @@
     "name": "@platform/sdk",
     "version": "0.0.1",
     "type": "module",
-    "main": "./dist/index.js",
-    "types": "./dist/index.d.ts",
+    "main": "./dist/platform-sdk/src/index.js",
+    "types": "./dist/platform-sdk/src/index.d.ts",
     "exports": {
         ".": {
-            "import": "./dist/index.js",
-            "types": "./dist/index.d.ts"
+            "import": "./dist/platform-sdk/src/index.js",
+            "types": "./dist/platform-sdk/src/index.d.ts"
         }
     },
     "scripts": {

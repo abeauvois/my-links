@@ -40,6 +40,9 @@ export type {
     IngestOptions,
     WorkflowHookInfo,
     WorkflowExecuteOptions,
+    WorkflowCompleteInfo,
+    ItemProcessedInfo,
+    ProcessedItem,
     IIngestWorkflow,
     ILogger,
 } from './types.js';

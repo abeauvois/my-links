@@ -147,6 +147,20 @@ bun run it:notion     # Integration tests for Notion
 bun run it:twitter    # Integration tests for Twitter
 ```
 
+### Session Management
+
+The CLI stores session tokens in `~/.platform-cli/session.json`. If your session expires (401 errors), renew it:
+
+```bash
+# Using environment variables (recommended)
+export PLATFORM_EMAIL="your@email.com"
+export PLATFORM_PASSWORD="yourpassword"
+bun run api:renew-session
+
+# Or pass credentials directly
+bun run api:renew-session your@email.com yourpassword
+```
+
 ## Packages
 
 ### @platform/domain

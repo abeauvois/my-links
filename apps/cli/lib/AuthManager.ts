@@ -56,7 +56,7 @@ export class AuthManager {
             const password = await this.promptForInput('Password: ', true);
 
             // Call API to sign in
-            const authResponse = await this.apiClient.signIn({ email, password });
+            const authResponse = await this.apiClient.auth.signIn({ email, password });
 
             // Save session to file
             this.saveSession(authResponse);
@@ -74,7 +74,7 @@ export class AuthManager {
      */
     async signUp(name: string, email: string, password: string): Promise<AuthResponse | null> {
         try {
-            const authResponse = await this.apiClient.signUp({ email, password, name });
+            const authResponse = await this.apiClient.auth.signUp({ email, password, name });
 
             // Save session to file
             this.saveSession(authResponse);
@@ -96,7 +96,7 @@ export class AuthManager {
             const session = this.loadSession();
             if (session) {
                 this.apiClient.setSessionToken(session.sessionToken);
-                await this.apiClient.signOut();
+                await this.apiClient.auth.signOut();
             }
 
             // Clear local session file

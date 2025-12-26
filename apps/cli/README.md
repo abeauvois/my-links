@@ -1,6 +1,6 @@
 # Platform CLI
 
-Command-line interface for the platform, providing bookmark management, data ingestion, and Notion integration.
+Command-line interface for the platform, providing bookmark management, data ingestion, and source reader workflows.
 
 ## Structure
 
@@ -10,12 +10,15 @@ apps/cli/
 ├── commands/             # Command definitions
 │   ├── personal.ts       # Personal namespace
 │   ├── bookmark.ts       # Bookmark management
+│   ├── list/             # List commands
+│   │   ├── index.ts      # List namespace
+│   │   ├── source.ts     # Source management
+│   │   └── gmail.ts      # Gmail ingestion workflow
 │   ├── list.ts           # List bookmarks from API
-│   ├── ingest.ts         # Ingest bookmarks from sources
 │   ├── extract.ts        # Extract data from sources
-│   ├── notion.ts         # Notion integration
 │   └── select.ts         # Interactive selection
 ├── lib/                  # Shared utilities
+├── tests/                # Integration tests
 └── data/                 # Local data storage
 ```
 
@@ -45,11 +48,11 @@ bun run apps/cli/index.ts <command>
 # List bookmarks
 bun run cli personal bookmark list
 
-# Ingest from Gmail
-bun run cli personal bookmark ingest -f gmail
+# Trigger Gmail ingestion workflow
+bun run cli list source gmail --filter=user@example.com --limit-days=7
 
-# Ingest with output format
-bun run cli personal bookmark ingest -f gmail -t csv
+# Gmail ingestion with defaults (7 days)
+bun run cli list source gmail
 ```
 
 ## Configuration
@@ -87,6 +90,18 @@ To clear session (logout):
 
 ```bash
 rm ~/.platform-cli/session.json
+```
+
+To renew an expired session:
+
+```bash
+# From root directory
+bun run api:renew-session your@email.com yourpassword
+
+# Or with environment variables
+export PLATFORM_EMAIL="your@email.com"
+export PLATFORM_PASSWORD="yourpassword"
+bun run api:renew-session
 ```
 
 ## Development
@@ -137,8 +152,17 @@ Build the packages:
 bun run build:lib
 ```
 
-### "Authentication failed"
+### "Authentication failed" or 401 Unauthorized
 
 1. Check API server is running on http://localhost:3000
 2. Verify user exists with correct credentials
-3. Clear session file: `rm ~/.platform-cli/session.json`
+3. Renew session: `bun run api:renew-session your@email.com password`
+4. Or clear session file: `rm ~/.platform-cli/session.json`
+
+## Testing
+
+Run integration tests (requires API server running):
+
+```bash
+bun test ./apps/cli/tests/integration/gmail-source.test.ts
+```

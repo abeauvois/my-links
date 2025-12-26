@@ -11,6 +11,7 @@ const workflowPresets = ['full', 'quick', 'analyzeOnly', 'twitterFocus', 'csvOnl
  */
 const ingestFilterSchema = z.object({
     email: z.string().email().optional(),
+    limitDays: z.number().int().positive().max(365).optional(),
 }).optional();
 
 /**

@@ -22,12 +22,33 @@ export interface IngestJobPayload {
 export type IngestJobStatus = 'pending' | 'running' | 'completed' | 'failed';
 
 /**
+ * Processed item returned by the workflow
+ */
+export interface ProcessedItem {
+    id: string;
+    url: string;
+    sourceAdapter: string;
+    tags: string[];
+    summary?: string;
+}
+
+/**
  * Result stored after job completion
  */
 export interface IngestJobResult {
     itemsProcessed: number;
     itemsCreated: number;
     errors: string[];
+    /** All processed items for display by outer apps */
+    processedItems?: ProcessedItem[];
+}
+
+/**
+ * Item progress within current step
+ */
+export interface ItemProgress {
+    current: number;
+    total: number;
 }
 
 /**
@@ -37,5 +58,9 @@ export interface IngestJobOutput {
     status: IngestJobStatus;
     progress: number;
     message: string;
+    /** Current step being executed */
+    currentStep?: string;
+    /** Item progress within current step */
+    itemProgress?: ItemProgress;
     result?: IngestJobResult;
 }

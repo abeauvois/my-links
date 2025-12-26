@@ -3,6 +3,7 @@
  */
 
 // Entities
+export * from './domain/entities/BaseContent'
 export * from './domain/entities/Bookmark'
 export * from './domain/entities/EmailFile'
 export * from './domain/entities/GmailMessage'
@@ -15,3 +16,6 @@ export * from './domain/ports/ILogger'
 
 // Application Services
 export * from './application/services/GetBookmarksByUserIdService'
+
+// Workflows
+export * from './application/workflows'

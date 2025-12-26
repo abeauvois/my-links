@@ -13,6 +13,27 @@ export interface WorkflowContext<T> {
     updatedIds: Set<string>;
     /** Metadata for tracking workflow state */
     metadata: Record<string, unknown>;
+    /** Callback when an item is processed (set by WorkflowBuilder) */
+    onItemProcessed?: (info: ItemProcessedInfo<T>) => Promise<void> | void;
+}
+
+/**
+ * Information about a processed item
+ * @typeParam T - The type of item that was processed
+ */
+export interface ItemProcessedInfo<T> {
+    /** The processed item */
+    item: T;
+    /** Index of the item (0-based) */
+    index: number;
+    /** Total number of items being processed */
+    total: number;
+    /** Name of the step that processed the item */
+    stepName: string;
+    /** Whether the item was processed successfully */
+    success: boolean;
+    /** Error message if processing failed */
+    error?: string;
 }
 
 /**

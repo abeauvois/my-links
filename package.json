@@ -18,6 +18,7 @@
     "build:cached-http": "cd packages/cached-http-client && bun run build",
     "cli": "bun run apps/cli/index.ts",
     "api": "cd apps/api && bun run dev",
+    "api:renew-session": "bash apps/api/server/scripts/renew-session.sh",
     "dashboard": "cd apps/dashboard && bun run dev",
     "trading:server": "cd apps/trading && bun run server",
     "trading:client": "cd apps/trading && bun run client",
