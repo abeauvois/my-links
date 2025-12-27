@@ -1,29 +1,6 @@
 import { command } from 'cleye';
 import * as p from '@clack/prompts';
-import { AuthManager } from '../../lib/AuthManager.js';
-import { PlatformApiClient } from '@platform/sdk';
-
-/**
- * Create a clack-based logger that uses spinners for progress
- */
-
-// TODO: Move to a shared utils package because all cli commands will need this
-function createClackLogger() {
-    return {
-        info: (message: string) => p.log.info(message),
-        error: (message: string) => p.log.error(message),
-        warning: (message: string) => p.log.warn(message),
-        debug: () => { }, // Suppress debug logs
-        await: (message: string) => {
-            const spinner = p.spinner();
-            return {
-                start: () => spinner.start(message),
-                update: (msg: string) => spinner.message(msg),
-                stop: () => spinner.stop(message),
-            };
-        },
-    };
-}
+import { createCliContext, getDefaultEmail } from '../../lib/cli-context.js';
 
 /**
  * Gmail command - Trigger Gmail ingestion workflow
@@ -53,50 +30,40 @@ export const gmailCommand = command({
     p.intro('Gmail Source Ingestion');
 
     try {
-        const baseUrl = process.env.PLATFORM_API_URL || 'http://localhost:3000'; // TODO: should come from a config object, fetched from the platform
-        const logger = createClackLogger();
-
-        // Authenticate
-        const authManager = new AuthManager({ baseUrl, logger }); // TODO: AuthManager should use a config object, fetched from the platform
-        const credentials = await authManager.login();
-
-        if (!credentials) {
-            p.log.error('Authentication failed. Please check your credentials and try again.');
-            p.outro('Ingestion cancelled');
-            process.exit(1);
-        }
-
-        // Create authenticated API client
-        const apiClient = new PlatformApiClient({  // TODO: PlatformApiClient should use a config object, fetched from the platform
-            baseUrl,
-            sessionToken: credentials.sessionToken,
-            logger,
-        });
+        // Create authenticated CLI context (handles auth, API client, and config)
+        const ctx = await createCliContext();
 
         // Build filter options
         const filter: { email?: string; limitDays?: number } = {};
+
+        // Use provided filter, or fall back to config/user email
         if (argv.flags.filter) {
-            filter.email = argv.flags.filter || process.env.PLATFORM_EMAIL; // TODO: should come from a config object, fetched from the platform
+            filter.email = argv.flags.filter;
+        } else {
+            const defaultEmail = getDefaultEmail(ctx);
+            if (defaultEmail) {
+                filter.email = defaultEmail;
+            }
         }
+
         if (argv.flags.limitDays) {
-            filter.limitDays = argv.flags.limitDays || 7;
+            filter.limitDays = argv.flags.limitDays;
         }
-        console.log("🚀 ~ filter:", filter)
 
         // Display configuration
         const configLines = [];
         if (filter.email) {
             configLines.push(`Filter: ${filter.email}`);
         }
-        configLines.push(`Limitx: ${filter.limitDays} days`);
+        configLines.push(`Limit: ${filter.limitDays} days`);
         p.note(configLines.join('\n'), 'Configuration');
 
         // Create and execute workflow
-        const workflow = apiClient.ingest.create('gmail', { filter });
+        const workflow = ctx.apiClient.ingest.create('gmail', { filter });
 
         await workflow.execute({
             onItemProcessed: ({ index, total }: { index: number, total: number }) => {
-                console.log(`Processedx ${index + 1}/${total} items`);
+                ctx.logger.info(`Processed ${index + 1}/${total} items`);
             },
             onError: () => {
                 p.log.error('An error occurred during ingestion.');
